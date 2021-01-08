@@ -1,0 +1,21 @@
+ABC000 index
+ABC001 int
+ABC002 datetime:2020-12-01 10\:10\:15:2s
+BIT000 list:[0,1]
+BIT001 list:[0,1]
+BIT002 list:[0,1]
+BIT003 list:[0,1]
+BIT004 list:[0,1]
+BIT005 list:[0,1]
+BIT006 list:[0,1]
+BIT007 list:[0,1]
+BIT008 list:[0,1]
+BIT009 list:[0,1]
+BIT010 list:[0,1]
+BIT011 list:[0,1]
+BIT012 list:[0,1]
+BIT013 list:[0,1]
+BIT014 list:[0,1]
+BIT015 list:[0,1]
+
+

@@ -1,0 +1,15 @@
+ABC000 index
+ABC001 int
+ABC002 datetime
+ABC003 datetime:2020-12-01 08\:05\:10:5h
+ABC004 fixed: ABCDEF
+ABC005 q:list:["A0001","A0001","A0001","A0001","B0010"]
+ABC006 rand
+ABC007 q:hex
+ABC008 format:"file_{row:03d}_{col:03d}_{random:03d}_{time}.txt"
+ABC009 list:{"A0001":3,"B0010":2}
+ABC010 list:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
+ABC011 random.beta(0.2,10.)
+ABC012 random.normal()
+ABC013 random.exponential()
+ABC014

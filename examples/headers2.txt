@@ -1,0 +1,5 @@
+ABC000 index
+ABC001 rand
+ABC002 rand
+ABC003 rand
+ABC004 list:{"A0001":3,"B0010":2,"C0100":3}
