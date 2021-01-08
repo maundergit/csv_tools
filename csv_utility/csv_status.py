@@ -14,12 +14,10 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-# import fileinput
 import textwrap
 import sys
-import pprint
+# import pprint
 
-# import numpy as np
 import pandas as pd
 
 VERSION = 1.0
@@ -78,7 +76,7 @@ example:
   csv_status.py --mode morethan --arguments=3740 bit-pattern-headers.csv
   csv_uty.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:10s' bit-pattern-headers.csv|\\
      csv_status.py --mode sum --group D -|csv_uty.py --drop_columns=ABC000,ABC001 - |\\
-     csv_uty.py --stack=D - |csv_plot_bar.py --output=test.html --animation_column=D - category stacked_result
+     csv_trimtime.py --stack=D - |csv_plot_bar.py --output=test.html --animation_column=D - category stacked_result
 
   csv_status.py --columns=2,5 big_sample_headers.csv
   == information for columns: ABC001

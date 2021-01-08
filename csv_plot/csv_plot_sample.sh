@@ -41,6 +41,7 @@ csv_plot_heatmap.py --xrange=0,.5 --yrange=0,.5 --side_hist=histogram --hist_fun
 csv_plot_heatmap.py --xrange=0,.5 --yrange=0,.5 --side_hist=histogram --hist_func="min" --format=html test_plot.csv ABC001 ABC002
 csv_plot_heatmap.py --xrange=0,.5 --yrange=0,.5 --side_hist=histogram --hist_func="max" --format=html test_plot.csv ABC001 ABC002
 
+wget -O test_strip.csv https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv
 csv_plot_strip.py --facets=day --category=sex --format=html test_strip.csv total_bill time
 csv_plot_strip.py --facets=day --category=sex --format=html --mode=overlay test_strip.csv total_bill time
 

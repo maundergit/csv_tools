@@ -14,7 +14,6 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-import fileinput
 import textwrap
 import sys
 
@@ -22,7 +21,6 @@ import re
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from openpyxl import Workbook

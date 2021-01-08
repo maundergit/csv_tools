@@ -14,14 +14,12 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-import fileinput
 import textwrap
 import sys
 
 from pathlib import Path
 
 import re
-import numpy as np
 import pandas as pd
 
 VERSION = 1.0

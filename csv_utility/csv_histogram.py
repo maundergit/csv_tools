@@ -14,7 +14,6 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-import fileinput
 import textwrap
 import sys
 import re

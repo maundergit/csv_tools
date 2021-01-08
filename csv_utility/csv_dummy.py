@@ -14,11 +14,10 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-# import fileinput
 import textwrap
 import sys
 import re
-# import random
+
 import json
 import datetime as dt
 import numpy as np

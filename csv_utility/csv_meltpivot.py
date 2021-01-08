@@ -14,11 +14,9 @@
 #    http://opensource.org/licenses/mit-license.php
 # ----------------------------------------------------------------------
 import argparse
-import fileinput
 import textwrap
 import sys
 
-from pathlib import Path
 from distutils.version import LooseVersion
 
 import re
