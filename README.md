@@ -1,3 +1,7 @@
+
+<!-- START doctoc -->
+<!-- END doctoc -->
+
 # csv_tools
 PythonやBashシェルスクリプで作成したCSV(Comma Separated Value)ファイルを取り扱うコマンドラインツール集。
 
@@ -7,6 +11,7 @@ PythonやBashシェルスクリプで作成したCSV(Comma Separated Value)フ�
 - Pythonの[pandas](https://pandas.pydata.org/)の機能を用いたCSVの処理
 - [csvkit](https://csvkit.readthedocs.io/en/latest/),[xsv](https://github.com/BurntSushi/xsv)などのCSV用ツールを用いた処理
 
+収録しているツールのリストは[コマンドリスト](COMMAND_LIST.md)に示した。
 
 ## なぜこれを作ったか
 
@@ -50,9 +55,9 @@ OSは Ubuntu 18/20 において開発、動作確認を実施している。
   `csv_wc.sh`にて使用
 - sqlite3 3.34.0  
   `csv_sqlite_insert.sh,csv_to_db_csvkit.sh,csv_to_db_shell.sh`にて使用
-- xsv 0.13.0  
+- [xsv](https://github.com/BurntSushi/xsv) 0.13.0  
   `csv_join.sh,csv_status_xsv.sh,csv_tool_list.sh`にて使用
-- jp  
+- [jq](https://github.com/sgreben/jp)  
   `csv_hist_console.sh`にて使用
 
 
@@ -71,7 +76,8 @@ plotly,xsv,jqについては、以下を参照してインストールを行う�
 
 ### インストール
 
-git cloneでダウンロードした後に、`csv_utility`と`csv_plot`にPATHを設定する。
+git cloneでダウンロードした後に、`csv_utility`ディレクトリと`csv_plot`ディレクトリにPATHを設定する。
+又は選択したものをPATHの設定されたディレクトリにコピーして使用する。
 
 
 ```shell
@@ -93,6 +99,11 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 
 チャート描画のサンプルは`examples`ディレクトリーへ移動して、`csv_plot/csv_plot_sample.sh`を実行することで、チャートの例が生成される。
 その他のサンプルについては、各コマンドのHelp出力(`--help`)を参照のこと。
+
+## ツールのリスト
+
+収録しているツールのリストは[コマンドリスト](COMMAND_LIST.md)に示した。
+
 
 ## 主として利用しているライブラリなど
 
