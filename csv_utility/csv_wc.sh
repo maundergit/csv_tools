@@ -37,7 +37,7 @@ check_commands nkf grep wc awk
 
 usage_exit() {
     cat <<EOF 2>&1
-wc like command for csv
+command like 'wc' for csv
 Usage: $SNAME (-c|-r|-t) csv_file
 options:
   -c : number of columns

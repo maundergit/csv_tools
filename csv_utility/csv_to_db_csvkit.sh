@@ -37,7 +37,7 @@ check_commands sqlite3 csvsql sed head
 
 usage_exit() {
     cat <<EOF 2>&1
-inset contents of csv file by csvkit
+to insret contents of csv file into db by csvkit
 Usage: $SNAME [-i] [-d db_name] [-s number_of_rows] [-p primary_keys] table_name csv_file
 arguments:
 

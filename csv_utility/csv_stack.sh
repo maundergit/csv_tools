@@ -46,7 +46,7 @@ options:
   -c categories : name of categories for each csv files, with csv format.
                   this options is available for only vertical mode.
 remark:
- when '-c' option was used, number of categories must be equal to nuber of csv files.
+ when '-c' option was used, number of categories must be equal to number of csv files.
  if this option was given, for each record there is column of category in result.
 
 example:
