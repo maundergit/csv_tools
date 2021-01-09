@@ -45,7 +45,7 @@ check_commands csvcut head tail
 
 usage_exit() {
     cat <<EOF 2>&1
-head like command for csv.
+command like head for csv.
 Usage: $SNAME [-t] [-c range_of_columns] [-r number_of_rows] csv_file 
 options:
   -c range_of_columns: range of columns as 1-base index ex.:16,20-31
