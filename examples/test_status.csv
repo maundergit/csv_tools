@@ -1,0 +1,9 @@
+field,type,sum,min,max,min_length,max_length,mean,stddev,median,mode,cardinality
+,Unicode,,1,A,1,1,,,,N/A,3
+,Unicode,,2,B,1,1,,,,N/A,3
+C,Unicode,,3,X,1,1,,,,N/A,3
+C,Unicode,,4,Y,1,1,,,,N/A,3
+C,Unicode,,5,Z,1,1,,,,N/A,3
+D,Unicode,,6,X,1,1,,,,N/A,3
+D,Unicode,,7,Y,1,1,,,,N/A,3
+D,Unicode,,0,Z,1,1,,,,N/A,3
