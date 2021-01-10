@@ -118,6 +118,8 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 
 収録しているツールのリストは[コマンドリスト](COMMAND_LIST.md)に示した。
 
+各コマンドのヘルプメッセージを [csv_plot_help](csv_plot/csv_plot_help.md)と[csv_utility_help](csv_utility/csv_utility_help.md)にまとめている。
+
 
 ## 主として利用しているライブラリなど
 
