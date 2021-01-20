@@ -54,6 +54,20 @@ remark:
   Using '--hyperlink', a cell will be with a hyperlink attribute for URL with http/https/file protocol or 
   a value of cell that is available as a path of a file.
 
+  you may execute following vba on the excel to set a property of an image object.
+How to automatically change all pictures to move and size with cells in Excel? https://www.extendoffice.com/documents/excel/4923-excel-picture-move-and-size-with-cells-default.html
+--
+Sub MoveAndSizeWithCells()
+    Dim xPic As Picture
+    On Error Resume Next
+    Application.ScreenUpdating = False
+    For Each xPic In ActiveSheet.Pictures
+        xPic.Placement = xlMoveAndSize
+    Next
+    Application.ScreenUpdating = True
+End Sub
+--
+
 example:
   csv_write_excel.py --image_column=file_name --output=images.xlsx images.csv
   csv_write_excel.py --image_column=file_name --output=images.xlsx --hyperlink images.csv
