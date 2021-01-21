@@ -235,6 +235,12 @@ if __name__ == "__main__":
 
     xlsx_output = args.OUTPUT
 
+    if csv_file == "-" and xlsx_output is None:
+        print("??error:write_excel: '--output' must be defined.", file=sys.stderr)
+        sys.exit(1)
+    elif csv_file != "-" and xlsx_output is None:
+        xlsx_output = Path(csv_file).stem + ".xlsx"
+
     if csv_file == "-":
         csv_file = sys.stdin
 
