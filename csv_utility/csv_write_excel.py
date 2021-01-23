@@ -105,7 +105,7 @@ example:
                             action="store_true",
                             default=False)
 
-    arg_parser.add_argument("--output", dest="OUTPUT", help="path of file to output", type=str, metavar='EXCEL_FILE', required=True)
+    arg_parser.add_argument("--output", dest="OUTPUT", help="path of file to output", type=str, metavar='EXCEL_FILE', default=None)
 
     arg_parser.add_argument('csv_file', metavar='CSV_FILE', help='csv file to read')
     args = arg_parser.parse_args()

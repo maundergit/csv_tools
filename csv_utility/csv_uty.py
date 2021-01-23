@@ -596,7 +596,7 @@ def decomp_bits_pattern(df, column_name, nbits=0):
     print("%inf:csv_uty:decomp_bits:{}".format(column_name), file=sys.stderr)
     df.reset_index(inplace=True)
     ds = df[column_name]
-    if ds.dtype != np.dtype('str') and ds.dtype != np.dtype('object'):
+    if ds.dtype != "string" and ds.dtype != "object":
         print("??Error:csv_uty:{} has no string.".format(column_name), file=sys.stderr)
         return
     if nbits > 0:
@@ -605,6 +605,8 @@ def decomp_bits_pattern(df, column_name, nbits=0):
         cnames = set(cns)
     else:
         cnames = set()
+
+    ds.fillna("0", inplace=True)
     for ir in range(len(df)):
         val = ds.loc[ir]
         if val is np.nan or val is None:
