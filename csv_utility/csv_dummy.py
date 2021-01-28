@@ -172,7 +172,11 @@ def make_column(c_type, ir, ic):
         cvs = re.split(r'\s*:\s*', c_type)
         result = cvs[1]
     elif c_type[0:5] == "list:":
-        cvs = json.loads(c_type[5:])
+        try:
+            cvs = json.loads(c_type[5:])
+        except json.decoder.JSONDecodeError as e:
+            print("%error:csv_dump:invalid format:{}:please check '[' or '{{ or quotation'".format(c_type[5:]), file=sys.stderr)
+            sys.exit(1)
         if isinstance(cvs, dict):
             cvs = sum([[v] * cvs[v] for v in cvs.keys()], [])
 
