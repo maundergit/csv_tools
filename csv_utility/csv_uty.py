@@ -596,7 +596,7 @@ def decomp_bits_pattern(df, column_name, nbits=0):
     print("%inf:csv_uty:decomp_bits:{}".format(column_name), file=sys.stderr)
     df.reset_index(inplace=True)
     ds = df[column_name]
-    if ds.dtype != "string" and ds.dtype != "object":
+    if format(ds.dtype) != "string" and format(ds.dtype) != "object":
         print("??Error:csv_uty:{} has no string.".format(column_name), file=sys.stderr)
         return
     if nbits > 0:
