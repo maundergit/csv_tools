@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
     if col_definitions.startswith('@'):
         col_definitions = read_defs_from_file(col_definitions[1:])
-    if inc_cols_s.startswith('@'):
+    if inc_cols_s is not None and inc_cols_s.startswith('@'):
         inc_cols_s = read_defs_from_file(inc_cols_s[1:])
 
     col_defs = re.split(r"\s*(?<!\\),\s*", col_definitions)
