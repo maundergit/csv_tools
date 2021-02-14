@@ -84,6 +84,7 @@ example:
     arg_parser.add_argument("--yrange", dest="YRANGE", help="range of y", type=str, metavar='YMIN,YMAX')
     arg_parser.add_argument("--log_x", dest="LOG_X", help="log-scaled x axis", action="store_true", default=False)
     arg_parser.add_argument("--log_y", dest="LOG_Y", help="log-scaled y axis", action="store_true", default=False)
+    arg_parser.add_argument("--noautoscale", dest="NOAUTOSCALE", help="not autoscale x or y for facets", action="store_false")
 
     arg_parser.add_argument("--output", dest="OUTPUT", help="path of output file", type=str, metavar="FILE")
     arg_parser.add_argument("--format",
@@ -117,6 +118,7 @@ if __name__ == "__main__":
     output_file = args.OUTPUT
     log_x = args.LOG_X
     log_y = args.LOG_Y
+    no_auto_scale = args.NOAUTOSCALE
     hist_func = args.HIST_FUNC
 
     if output_file is None:
@@ -254,6 +256,12 @@ output: {}
     print("parameters: {}".format(fig_params), file=sys.stderr)
     # plotly.express.histogram  4.11.0 documentation https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
     fig = px.histogram(csv_df, **fig_params)
+
+    if facet_mode:
+        if not no_auto_scale and (row_facet is not None and len(row_facet) > 0) and (col_facet is None or len(col_facet) == 0):
+            fig.update_yaxes(matches=None)
+        elif not no_auto_scale and (row_facet is None or len(row_facet) > 0) and (col_facet is not None and len(col_facet) > 0):
+            fig.update_xaxes(matches=None)
 
     if output_format == "json":
         if output_file == sys.stdout.buffer:
