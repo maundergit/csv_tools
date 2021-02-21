@@ -24,6 +24,13 @@ import pandas as pd
 
 VERSION = 1.0
 
+RESAMPLE_METHOD_INTERPOLATE = [
+    "linear", "quadratic", "cubic", "spline", "barycentric", "polynomial", "krogh", "piecewise_polynomial", "pchip", "akima",
+    "cubicspline"
+]
+
+RESAMPLE_METHOD = ["nearest", "count", "sum", "min", "max", "mean", "std"] + RESAMPLE_METHOD_INTERPOLATE
+
 
 def init():
     arg_parser = argparse.ArgumentParser(description="triming columns that have time data",
@@ -76,7 +83,7 @@ A,B,C,GA
 2020-11-13 10:25:00,6,2,3
 2020-11-13 10:26:00,7,1,3
 
-  csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:30s' big_sample_headers.csv |\\
+  csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S\:floor\:30s' big_sample_headers.csv |\\
                                                               csv_plot_histogram.py --animation_column=D --output=test.html - ABC005
 
   # in following example, column 'D' will be created as column of timestamp, and by those dataframe will be made into group and stacked.
@@ -145,12 +152,12 @@ A,B,C,GA
         dest="RESAMPLE",
         help="aggregating values of column resampled by time frequency, using function is defined by '--resample_function'",
         type=str,
-        metavar='COLUMN[:time_format]:freq:COLUMN[,COLUMN...]',
+        metavar='COLUMN[:time_format]:freq:COLUMN_TO_RESAMPLE[,COLUMN...]',
         default=None)
     arg_parser.add_argument("--resample_function",
                             dest="RESAMPLE_FUNC",
                             help="aggregation function for '--resample', default=mean",
-                            choices=["count", "sum", "min", "max", "mean", "std"],
+                            choices=RESAMPLE_METHOD,
                             default="mean")
     arg_parser.add_argument(
         "--select",
@@ -368,6 +375,13 @@ def do_rsampling(df, resample_defs, resample_func):
         output_df = output_df.resample(t_freq).std()
     elif resample_func == "count":
         output_df = output_df.resample(t_freq).count()
+    elif resample_func == "nearest":
+        output_df = output_df.resample(t_freq).nearest()
+    elif resample_func in RESAMPLE_METHOD_INTERPOLATE:
+        if resample_func not in ["spline", "polynomial"]:
+            output_df = output_df.resample(t_freq).interpolate(method=resample_func)
+        else:
+            output_df = output_df.resample(t_freq).interpolate(method=resample_func, order=3)
 
     output_df.fillna(0, inplace=True)
     return output_df
