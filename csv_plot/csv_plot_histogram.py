@@ -21,6 +21,8 @@ import json
 from pathlib import Path
 
 import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import plotly.express as px
 import pandas as pd
 
@@ -39,15 +41,23 @@ remark:
 
   If '--xrange' was given, valuse in the column was clipped into the range and plotted with bins given by '--nbins'.
 
+  for '--pareto_chart', only followings are available
+      '--xrange', '--yrange', '--nbins', '--output', '--format', '--with', '--height', '--packed_html'
+  '--pareto_sort_mode=axis' may be usefull to estimate threhold.
+
 example:
   csv_plot_histogram.py --nbins=50  --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
   csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
   csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --log_y --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
 
+  csv_plot_histogram.py --output=test.html --pareto_chart --nbins=100 a10.csv value
+  csv_plot_histogram.py --output=test.html --pareto_chart --pareto_sort_mode=axis --nbins=100 a10.csv value
+
 '''))
 
     arg_parser.add_argument('-v', '--version', action='version', version='%(prog)s {}'.format(VERSION))
     arg_parser.add_argument("--title", dest="TITLE", help="title of chart", type=str, metavar='TEXT', default="")
+
     arg_parser.add_argument("--nbins", dest="NBINS", help="number of bins,default=10", type=int, metavar='INT', default=10)
     arg_parser.add_argument("--side_hist",
                             dest="SIDE_HIST",
@@ -99,11 +109,88 @@ example:
     arg_parser.add_argument("--width", dest="WIDTH", help="width of output", type=int, metavar='WIDTH', default=None)
     arg_parser.add_argument("--height", dest="HEIGHT", help="height of output", type=int, metavar='HEIGHT', default=None)
 
+    arg_parser.add_argument("--pareto_chart", dest="PARETO", help="pareto chart mode", action="store_true", default=False)
+    arg_parser.add_argument("--pareto_sort_mode",
+                            dest="PARETO_M",
+                            help="sort mode for pareto mode, default=asscending count",
+                            choices=["count", "axis"],
+                            default="count")
+
     arg_parser.add_argument('csv_file', metavar='CSV_FILE', help='csv files to read', nargs=1)
     arg_parser.add_argument('x_column', metavar='X_COLUMN', help='name of colum as x-axis', nargs=1)
     arg_parser.add_argument('y_column', metavar='Y_COLUMN', help='name of colum as weight of histogram', nargs="?")
     args = arg_parser.parse_args()
     return args
+
+
+def make_categ_hist(df, column, sort_mode, params):
+    col = column
+    df_series = df[col]
+    if sort_mode == "count":
+        pareto_df = df_series.value_counts().sort_values(ascending=False).reset_index()
+    else:
+        pareto_df = df_series.value_counts().reset_index()
+        pareto_df.sort_index(ascending=True, inplace=True)
+
+    # pareto_df["index"] = pareto_df["index"].apply(lambda x: str(x))
+    pareto_df["index"] = pareto_df["index"].astype("string")
+
+    return pareto_df
+
+
+def make_number_hist(df, column, sort_mode, params):
+    nphist_arg = {"bins": params["nbins"]}
+    if "y" in params:
+        nphist_arg.update({"weights": np.array(df[params["y"]])})
+    hist, bins = np.histogram(np.array(df[column]), **nphist_arg)
+    pareto_df = pd.DataFrame(columns=[column, "index"])
+    pareto_df["index"] = bins[:-1]
+    pareto_df[column] = hist
+    if sort_mode == "count":
+        pareto_df.sort_values(ascending=False, inplace=True, by=column)
+        pareto_df.reset_index(inplace=True, drop=True)
+    else:
+        pareto_df.sort_index(ascending=True, inplace=True)
+
+    pareto_df["index"] = pareto_df["index"].apply(lambda x: "{:.4e}".format(x))
+
+    return pareto_df
+
+
+def plot_pareto_chart(df, column, sort_mode, params):
+    col = column
+    if df[column].dtype == float or df[column].dtype == int:
+        pareto_df = make_number_hist(df, column, sort_mode, params)
+    else:
+        pareto_df = make_categ_hist(df, column, sort_mode, params)
+
+    pareto_df["cumulative persentage"] = pareto_df[col].cumsum() / pareto_df[col].sum() * 100
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(x=pareto_df["index"], y=pareto_df[col], name="cumulative persentage"),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(x=pareto_df["index"], y=pareto_df["cumulative persentage"], name="cumulative persentage"),
+        secondary_y=True,
+    )
+    fig.update_layout(xaxis=dict(type="category"))
+    if "titile" in params:
+        fig.update_layout(title_text=params["title"])
+    if "range_y" in params:
+        fig.update_layout(yaxis_range=params["range_y"])
+    if "log_x" in params and params["log_x"]:
+        fig.update_xaxes(type="log")
+    if "log_y" in params and params["log_y"]:
+        fig.update_yaxes(type="log")
+
+    fig.update_xaxes(title_text=col)
+
+    fig.update_yaxes(title_text="count", secondary_y=False)
+    fig.update_yaxes(title_text="cumulative persentage", secondary_y=True)
+
+    return fig, pareto_df
 
 
 if __name__ == "__main__":
@@ -120,6 +207,9 @@ if __name__ == "__main__":
     log_y = args.LOG_Y
     no_auto_scale = args.NOAUTOSCALE
     hist_func = args.HIST_FUNC
+
+    pareto_mode = args.PARETO
+    pareto_sort_mode = args.PARETO_M
 
     if output_file is None:
         if csv_file != "-":
@@ -255,13 +345,16 @@ output: {}
 """.format(csv_file, output_file), file=sys.stderr)
     print("parameters: {}".format(fig_params), file=sys.stderr)
     # plotly.express.histogram  4.11.0 documentation https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
-    fig = px.histogram(csv_df, **fig_params)
+    if pareto_mode:
+        fig, pareto_df = plot_pareto_chart(csv_df, fig_params["x"], pareto_sort_mode, fig_params)
+    else:
+        fig = px.histogram(csv_df, **fig_params)
 
-    if facet_mode:
-        if not no_auto_scale and (row_facet is not None and len(row_facet) > 0) and (col_facet is None or len(col_facet) == 0):
-            fig.update_yaxes(matches=None)
-        elif not no_auto_scale and (row_facet is None or len(row_facet) > 0) and (col_facet is not None and len(col_facet) > 0):
-            fig.update_xaxes(matches=None)
+        if facet_mode:
+            if not no_auto_scale and (row_facet is not None and len(row_facet) > 0) and (col_facet is None or len(col_facet) == 0):
+                fig.update_yaxes(matches=None)
+            elif not no_auto_scale and (row_facet is None or len(row_facet) > 0) and (col_facet is not None and len(col_facet) > 0):
+                fig.update_xaxes(matches=None)
 
     if output_format == "json":
         if output_file == sys.stdout.buffer:
