@@ -20,6 +20,7 @@ import sys
 from datetime import timedelta
 
 import re
+import numpy as np
 import pandas as pd
 
 VERSION = 1.0
@@ -50,7 +51,8 @@ remark:
 
   If you make group according to gap in seriesed values or datetime, '--gap' or '--time_gap' are available.
   This group is useful for plotting by 'csv_plot_*', printing status by 'csv_status'.
-  For '--time_gap', about format string , see above about '--change_timefreq'
+  For '--time_gap', about time format string , see above about '--change_timefreq'
+  using '--gap', numeric others than date time data are treated.
   For '--gap' and '--time_gap', given gap should be positive.
 
   If you want to use commas and colon in expression of '--change_timefreq' and others, those must be escaped by back-slash. see examples.
@@ -133,7 +135,8 @@ A,B,C,GA
                             default=None)
     arg_parser.add_argument("--time_gap",
                             dest="TGAP",
-                            help="group by time gap[seconds] :format of definitoin is 'group_column_name=col_name:format:gap'." +
+                            help="group by time gap[seconds],format of definitoin is 'group_column_name=col_name:format:gap'." +
+                            "unit of 'gap' is second." +
                             " if you use comma or colon in expression, those must be escaped with back-slash",
                             type=str,
                             metavar='COLUMN=definition[,COLUMN=definition...]',
@@ -329,6 +332,12 @@ def groupby_gap(df, column_name, group_column_name, gap):
 
     dt_s = pd.Series([False] * len(df), index=df.index, dtype="boolean")
     dt_s.loc[df[column_name].diff().abs() > gap] = True
+
+    if df[column_name].diff().abs().loc[dt_s].dtype != np.timedelta64:
+        gap_list = list(df[column_name].diff().abs().loc[dt_s].apply(lambda x: x.total_seconds()))
+    else:
+        gap_list = list(df[column_name].diff().abs().loc[dt_s])
+    print("%inf:csv_trimtime:detected gap values:\n{}".format(gap_list), file=sys.stderr)
 
     g_count = len(dt_s.loc[dt_s])
     df.loc[dt_s, group_column_name] = list(range(1, g_count + 1))
