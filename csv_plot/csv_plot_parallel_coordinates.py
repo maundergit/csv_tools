@@ -146,8 +146,15 @@ if __name__ == "__main__":
         fig_params["height"] = int(height)
     if xrange is not None:
         fig_params["range_color"] = xrange
+
     if animation_col is not None:
+        if "category_orders" not in fig_params:
+            fig_params["category_orders"] = {}
         fig_params["animation_frame"] = animation_col
+        if len(csv_df[animation_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".fromat(animation_col), file=sys.stderr)
+            sys.exit(1)
+        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
 
     print("""
 ==== plot chart from csv

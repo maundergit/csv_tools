@@ -216,8 +216,6 @@ if __name__ == "__main__":
         fig_params["range_theta"] = thrange
     if log_r:
         fig_params["log_r"] = True
-    if animation_col is not None:
-        fig_params["animation_frame"] = animation_col
 
     if chart_type == "scatter":
         fig_params.update(scatter_params)
@@ -231,6 +229,16 @@ if __name__ == "__main__":
         figco[theta_col_name] = sorted(csv_df[theta_col_name].value_counts().keys())
     if len(figco) > 0:
         fig_params["category_orders"] = figco
+
+    if animation_col is not None:
+        if "category_orders" not in fig_params:
+            fig_params["category_orders"] = {}
+        fig_params["animation_frame"] = animation_col
+        if len(csv_df[animation_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".fromat(animation_col), file=sys.stderr)
+            sys.exit(1)
+        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
+
     if len(categ_orders) > 0:
         if "category_orders" in fig_params:
             fig_params["category_orders"].update(categ_orders)

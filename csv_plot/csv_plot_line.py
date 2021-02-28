@@ -224,11 +224,19 @@ if __name__ == "__main__":
         fig_params["log_x"] = True
     if log_y:
         fig_params["log_y"] = True
-    if animation_col is not None:
-        fig_params["animation_frame"] = animation_col
 
     if csv_df[x_column].dtype in [str, object]:
         fig_params["category_orders"] = {x_column: sorted(csv_df[x_column].value_counts().keys())}
+
+    if animation_col is not None:
+        if "category_orders" not in fig_params:
+            fig_params["category_orders"] = {}
+        fig_params["animation_frame"] = animation_col
+        if len(csv_df[animation_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".fromat(animation_col), file=sys.stderr)
+            sys.exit(1)
+        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
+
     if len(categ_orders) > 0:
         if "category_orders" in fig_params:
             fig_params["category_orders"].update(categ_orders)

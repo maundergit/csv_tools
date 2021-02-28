@@ -18,6 +18,7 @@ import textwrap
 import sys
 
 from datetime import timedelta
+from datetime import datetime as dtt
 
 import re
 import numpy as np
@@ -58,13 +59,18 @@ remark:
   If you want to use commas and colon in expression of '--change_timefreq' and others, those must be escaped by back-slash. see examples.
 
   processing order:
-    convert into timestamp, add time column, reformat, gap, time gap, change timrefreq, resample, select time range
+    sort datetime, convert into timestamp, add time column, reformat, gap, time gap, time diff, change timrefreq, resample, 
+    select datetime range, select hours range
 
 example:
+
+
   csv_trimtime.py --get_range_of_time='A:M' test_trimtime.csv
 %inf:csv_uty:get time of range:A:13106.0 mins
   csv_trimtime.py --get_range_of_time='A:M' test_trimtime.csv | sed -E 's/^.*:([0-9.]+) mins/\1/'
 13106.0
+
+  csv_trimtime.py --sort_datetime=date a10.csv
 
   csv_trimtime.py --timestamp="D:A" test_trimtime.csv
   csv_trimtime.py --add_time_column="D:2020-12-01 12\:12\:12:5s" test_trimtime.csv
@@ -80,10 +86,6 @@ A,B,C,GA
 2020-11-13 10:00:00,1,19,1
 2020-11-13 10:01:00,2,18,1
 2020-11-13 10:02:00,3,7,1
-2020-11-13 10:13:00,4,6,2
-2020-11-13 10:14:00,5,3,2
-2020-11-13 10:25:00,6,2,3
-2020-11-13 10:26:00,7,1,3
 
   csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S\:floor\:30s' big_sample_headers.csv |\\
                                                               csv_plot_histogram.py --animation_column=D --output=test.html - ABC005
@@ -96,17 +98,43 @@ A,B,C,GA
 
   csv_trimtime.py --resample="A:%Y-%m-%d %H\:%M\:%S:2min:B,C" --resample_func=mean test_trimtime.csv
 
-  csv_trimtime.py --select="A:10\:00\:00,11\:00\:00" test_trimtime.csv
-  csv_trimtime.py --select="A:10\:00\:00,1\:00\:00pm" test_trimtime.csv
+  csv_trimtime.py --select_hours="A:10\:00\:00,11\:00\:00" test_trimtime.csv
+  csv_trimtime.py --select_hours="A:10\:00\:00,1\:00\:00pm" test_trimtime.csv
+  csv_trimtime.py --select_datetime="date:%Y-%m-%d:2007-01-01,2007-12-01" a10.csv
+
+  csv_trimtime.py --calculate_time_diff="TD=A:%Y-%m-%d %H\:%M\:%S:1" test_trimtime.csv
+A,B,C,TD
+2020-11-14 10:00:00,1,19,
+2020-11-13 10:00:00,1,19,-86400.0
+2020-11-13 10:01:00,2,18,60.0
+
+  csv_trimtime.py --calculate_elapsed_time="G=date:%Y-%m-%d:2007-08-01 00\:00\:00" a10.csv
+date,value,G
+2007-06-01,20.681002,-5270400.0
+2007-07-01,21.834889999999998,-2678400.0
+2007-08-01,23.93020353,0.0
+2007-09-01,22.93035694,2678400.0
+2007-10-01,23.26333992,5270400.0
+
 
 '''))
 
     arg_parser.add_argument('-v', '--version', action='version', version='%(prog)s {}'.format(VERSION))
     arg_parser.add_argument("--get_range_of_time",
                             dest="GRANGE",
-                            help="range of time of column, available unit:H,M,S",
+                            help="range of time of column, available unit:H,M,S" +
+                            " if you use comma or colon in expression, those must be escaped with back-slash",
                             type=str,
-                            metavar='COLUMN[:format]:unit',
+                            metavar='COLUMN[:datetime_format]:unit',
+                            default=None)
+
+    arg_parser.add_argument("--sort_datetime",
+                            dest="TSORT",
+                            help="sort datetime, format of definition=column_name[:datetime_format]." +
+                            "default datetime_format='%%Y-%%m-%%d %%H:%%M:%%S'." +
+                            " if you use comma or colon in expression, those must be escaped with back-slash",
+                            type=str,
+                            metavar="COLUMN_NAME:datetime_format",
                             default=None)
     arg_parser.add_argument("--timestamp",
                             dest="TSTAMP",
@@ -122,20 +150,21 @@ A,B,C,GA
                             default=None)
     arg_parser.add_argument("--reformat",
                             dest="REFORMAT",
-                            help="change format of datetime of column",
+                            help="change format of datetime of column" +
+                            " if you use comma or colon in expression, those must be escaped with back-slash",
                             type=str,
                             metavar='COLUMN:in_format[:out_format]',
                             default=None)
     arg_parser.add_argument("--gap",
                             dest="GAP",
-                            help="group by value gap:format of definitoin is 'group_column_name=col_name:gap'." +
+                            help="group by value gap, format of definitoin is 'group_column_name=col_name:gap'." +
                             " if you use comma or colon in expression, those must be escaped with back-slash",
                             type=str,
                             metavar='COLUMN=definition[,COLUMN=definition...]',
                             default=None)
     arg_parser.add_argument("--time_gap",
                             dest="TGAP",
-                            help="group by time gap[seconds],format of definitoin is 'group_column_name=col_name:format:gap'." +
+                            help="group by time gap[seconds],format of definitoin is 'group_column_name=col_name:datetime_format:gap'." +
                             "unit of 'gap' is second." +
                             " if you use comma or colon in expression, those must be escaped with back-slash",
                             type=str,
@@ -143,9 +172,31 @@ A,B,C,GA
                             default=None)
 
     arg_parser.add_argument(
+        "--calculate_time_diff",
+        dest="TDIFF",
+        help="calculate difference[seconds] of datetime column,format of definitoin is 'column_name=col_name[:datetime_format[:step]]'." +
+        "format is datetime format, default='%%Y-%%m-%%d %%H:%%M:%%S'. 'step' is integer value, default=1." +
+        " if you use comma or colon in expression, those must be escaped with back-slash",
+        type=str,
+        metavar='COLUMN:definition',
+        default=None)
+
+    arg_parser.add_argument(
+        "--calculate_elapsed_time",
+        dest="ETIME",
+        help=
+        "calculate elapsed time[seconds] of datetime column,format of definitoin is 'column_name=col_name[:datetime_format[:origin]]'." +
+        "format is datetime format, default='%%Y-%%m-%%d %%H:%%M:%%S'. 'origin' is datetime which format is '%%Y-%%m-%%d %%H:%%M:%%S'." +
+        "if 'origin' was omitted, value at first row will be used as origin." +
+        " if you use comma or colon in expression, those must be escaped with back-slash",
+        type=str,
+        metavar='COLUMN:definition',
+        default=None)
+
+    arg_parser.add_argument(
         "--change_timefreq",
         dest="CHTFREQ",
-        help="change datetime frequeny unit:format of definitoin is 'new_column_name=old_col_name:format:method:frequency'." +
+        help="change datetime frequeny unit:format of definitoin is 'new_column_name=old_col_name:datetime_format:method:frequency'." +
         " if you use comma or colon in expression, those must be escaped with back-slash",
         type=str,
         metavar='COLUMN=definition[,COLUMN=definition...]',
@@ -163,12 +214,19 @@ A,B,C,GA
                             choices=RESAMPLE_METHOD,
                             default="mean")
     arg_parser.add_argument(
-        "--select",
-        dest="TSELECT",
-        help="select time range, ex: 14:00-18:00 for every days. 'start_time' and 'end_time' have the format:%%H:%%M,%%H:%%M:%%S",
+        "--select_hours",
+        dest="TSELECT_HOURS",
+        help="select hours range, ex: 14:00-18:00 for every days. 'start_time' and 'end_time' have the format:%%H:%%M,%%H:%%M:%%S",
         type=str,
         metavar='COLUMN[:time_format]:start_time,end_time',
         default=None)
+
+    arg_parser.add_argument("--select_datetime",
+                            dest="TSELECT",
+                            help="select datetime range, 'start_time' and 'end_time' have the same format as target column",
+                            type=str,
+                            metavar='COLUMN[:time_format]:start_time,end_time',
+                            default=None)
 
     arg_parser.add_argument("--output",
                             dest="OUTPUT",
@@ -334,9 +392,9 @@ def groupby_gap(df, column_name, group_column_name, gap):
     dt_s.loc[df[column_name].diff().abs() > gap] = True
 
     if df[column_name].diff().abs().loc[dt_s].dtype != np.timedelta64:
-        gap_list = list(df[column_name].diff().abs().loc[dt_s].apply(lambda x: x.total_seconds()))
+        gap_list = list(df[column_name].diff().loc[dt_s].apply(lambda x: x.total_seconds()))
     else:
-        gap_list = list(df[column_name].diff().abs().loc[dt_s])
+        gap_list = list(df[column_name].diff().loc[dt_s])
     print("%inf:csv_trimtime:detected gap values:\n{}".format(gap_list), file=sys.stderr)
 
     g_count = len(dt_s.loc[dt_s])
@@ -345,6 +403,87 @@ def groupby_gap(df, column_name, group_column_name, gap):
     df[group_column_name].ffill(axis=0, inplace=True)
     # df[group_column_name].fillna(g_count + 1, inplace=True)
     df[group_column_name] = df[group_column_name].astype('int64')
+    return df
+
+
+def calculate_time_diff(df, time_diff):
+    cvs = re.split(r"\s*(?<!\\)=\s*", time_diff)
+    cname = cvs[0]
+    if len(cvs) < 2:
+        print("??error:csv_trimtime:calculate_time_diff:invalid format of definition:{}".format(time_diff), file=sys.stderr)
+        sys.exit(1)
+    cvs = re.split(r"\s*(?<!\\):\s*", cvs[1])
+    t_col = cvs[0]
+    if len(cvs) < 2:
+        t_format = ""
+    else:
+        t_format = cvs[1]
+    if len(cvs) < 3:
+        t_step = 1
+    else:
+        t_step = int(cvs[2])
+    if len(t_format) > 0:
+        t_format = re.sub(r"\\:", ":", t_format)
+        t_format = re.sub(r"\\=", "=", t_format)
+    else:
+        t_format = "%Y-%m-%d %H:%M:%S"
+
+    df[t_col] = pd.to_datetime(df[t_col], format=t_format)
+    df[cname] = df[t_col].diff(t_step).apply(lambda x: x.total_seconds())
+
+    print("%inf:csv_trimtime:calculate_time_diff:min={},max={},mean={}".format(df[cname].min(), df[cname].max(), df[cname].mean()),
+          file=sys.stderr)
+
+    return df
+
+
+def calculate_elapsed_time(df, elapsed_time_def):
+    cvs = re.split(r"\s*(?<!\\)=\s*", elapsed_time_def)
+    cname = cvs[0]
+    if len(cvs) < 2:
+        print("??error:csv_trimtime:calculate_elapsed_time:invalid format of definition:{}".format(elapsed_time_def), file=sys.stderr)
+        sys.exit(1)
+    cvs = re.split(r"\s*(?<!\\):\s*", cvs[1])
+    t_col = cvs[0]
+    if len(cvs) < 2:
+        t_format = ""
+    else:
+        t_format = cvs[1]
+    if len(cvs) < 3:
+        t_org = 0
+    else:
+        t_org = cvs[2]
+        t_org = re.sub(r"\\:", ":", t_org)
+        t_org = dtt.strptime(t_org, "%Y-%m-%d %H:%M:%S")
+    if len(t_format) > 0:
+        t_format = re.sub(r"\\:", ":", t_format)
+        t_format = re.sub(r"\\=", "=", t_format)
+    else:
+        t_format = "%Y-%m-%d %H:%M:%S"
+
+    df[t_col] = pd.to_datetime(df[t_col], format=t_format)
+    if t_org == 0:
+        t_org = df[t_col][0]
+    df[cname] = (df[t_col] - t_org).apply(lambda x: x.total_seconds())
+
+    print("%inf:csv_trimtime:calculate_elapsed_time:min={},max={},mean={}".format(df[cname].min(), df[cname].max(), df[cname].mean()),
+          file=sys.stderr)
+
+    return df
+
+
+def sort_time_column(df, sort_time_def):
+    cvs = re.split(r"\s*(?<!\\):\s*", sort_time_def)
+    cname = cvs[0]
+    if len(cvs) < 2:
+        t_format = "%Y-%m-%d %H:%M:%S"
+    else:
+        t_format = cvs[1]
+
+    df[cname] = pd.to_datetime(df[cname], format=t_format)
+    df.sort_values(by=cname, inplace=True)
+    df.reset_index(inplace=True)
+
     return df
 
 
@@ -446,10 +585,10 @@ def evaluate_timestamp(df, eval_def):
     return df
 
 
-def do_select_time(df, select_def):
-    cvs = re.split(r"\s*(?<!\\):\s*", select_def)
+def do_select_hours(df, select_hours_def):
+    cvs = re.split(r"\s*(?<!\\):\s*", select_hours_def)
     if len(cvs) < 2:
-        print("??error:csv_trimtime:select time: invalid format {}".format(select_def), file=sys.stderr)
+        print("??error:csv_trimtime:select hours: invalid format {}".format(select_hours_def), file=sys.stderr)
         sys.exit(1)
 
     if len(cvs) > 2:
@@ -460,6 +599,7 @@ def do_select_time(df, select_def):
         t_col = cvs[0]
         t_range = cvs[1]
         t_fmt = None
+
     cvs = re.split(r"\s*(?<!\\),\s*", t_range)
     t_start = cvs[0]
     t_start = re.sub(r"\\", "", t_start)
@@ -475,6 +615,38 @@ def do_select_time(df, select_def):
     # for col in columns:
     #     if col != t_col:
     #         output_df[col] = df[col].between_time(t_start, t_end, include_start=True, include_end=True)
+
+    return output_df
+
+
+def do_select_datetime(df, select_dt_def):
+    cvs = re.split(r"\s*(?<!\\):\s*", select_dt_def)
+    if len(cvs) < 2:
+        print("??error:csv_trimtime:select datetime: invalid format {}".format(select_dt_def), file=sys.stderr)
+        sys.exit(1)
+
+    if len(cvs) > 2:
+        t_col = cvs[0]
+        t_fmt = cvs[1]
+        t_range = cvs[2]
+    else:
+        t_col = cvs[0]
+        t_range = cvs[1]
+        t_fmt = None
+
+    cvs = re.split(r"\s*(?<!\\),\s*", t_range)
+    t_start = cvs[0]
+    t_start = re.sub(r"\\", "", t_start)
+    t_end = cvs[1]
+    t_end = re.sub(r"\\", "", t_end)
+
+    t_start = dtt.strptime(t_start, t_fmt)
+    t_end = dtt.strptime(t_end, t_fmt)
+
+    df[t_col] = pd.to_datetime(df[t_col], format=t_fmt)
+    # df.set_index(t_col, inplace=True)
+
+    output_df = df.loc[(df[t_col] >= t_start) & (df[t_col] <= t_end)]
 
     return output_df
 
@@ -523,11 +695,17 @@ if __name__ == "__main__":
     if csv_file == "-":
         csv_file = sys.stdin
 
+    # sort time
+    sort_time_def = args.TSORT
+
     # range of time
     range_time_defs = args.GRANGE
 
-    # select time
-    t_select = args.TSELECT
+    # select hours
+    t_select_hours = args.TSELECT_HOURS
+
+    # select hours
+    t_select_dt = args.TSELECT
 
     # timestamp
     tstamp_def = args.TSTAMP
@@ -538,7 +716,10 @@ if __name__ == "__main__":
     # reformat
     refmt_def = args.REFORMAT
 
-    # time gap
+    # elapsed time
+    elapsed_time_def = args.ETIME
+
+    # gap
     gap_s = args.GAP
     gap_defs = []
     if gap_s is not None:
@@ -549,6 +730,9 @@ if __name__ == "__main__":
     timegap_defs = []
     if timegap_s is not None:
         timegap_defs = re.split(r"\s*(?<!\\),\s*", timegap_s)
+
+    # time diff
+    time_diff = args.TDIFF
 
     # time frequency
     ch_timefreqs_s = args.CHTFREQ
@@ -567,8 +751,12 @@ if __name__ == "__main__":
 
     if range_time_defs is not None:
         r_time, cname, unit_s, dt_max, dt_min = do_get_range_time(csv_df, range_time_defs)
-        print("%inf:csv_trimtime:get time of range:{}:max={},min={}:{} {}".format(cname, dt_max, dt_min, r_time, unit_s))
+        print("%inf:csv_trimtime:get time of range:{}:max={},min={}:perid={} {}".format(cname, dt_max, dt_min, r_time, unit_s))
         sys.exit(0)
+
+    if sort_time_def is not None:
+        print("%Inf:csv_trimtime:sort datetime:[{}]".format(sort_time_def), file=sys.stderr)
+        csv_df = sort_time_column(csv_df, sort_time_def)
 
     # timestamp
     if tstamp_def is not None:
@@ -582,27 +770,39 @@ if __name__ == "__main__":
     if refmt_def is not None:
         df, out_date_fmt = do_reformat(csv_df, refmt_def)
 
+    if elapsed_time_def is not None:
+        print("%Inf:csv_trimtime:calculate elapsed time:[{}]".format(elapsed_time_def), file=sys.stderr)
+        csv_df = calculate_elapsed_time(csv_df, elapsed_time_def)
+
     if len(gap_defs) > 0:
-        print("%Inf:csv_trimtime:groupby gap", file=sys.stderr)
+        print("%Inf:csv_trimtime:groupby gap:[{}]".format(gap_defs), file=sys.stderr)
         csv_df = groupby_value_gap(csv_df, gap_defs)
 
     if len(timegap_defs) > 0:
-        print("%Inf:csv_trimtime:groupby time gap", file=sys.stderr)
+        print("%Inf:csv_trimtime:groupby time gap:[{}]".format(timegap_defs), file=sys.stderr)
         csv_df = groupby_time_gap(csv_df, timegap_defs)
 
+    if time_diff is not None:
+        print("%Inf:csv_trimtime:calculate time diff:[{}]".format(time_diff), file=sys.stderr)
+        csv_df = calculate_time_diff(csv_df, time_diff)
+
     if len(ch_timefreqs) > 0:
-        print("%Inf:csv_trimtime:changing time frequency", file=sys.stderr)
+        print("%Inf:csv_trimtime:changing time frequency:[{}]".format(ch_timefreqs), file=sys.stderr)
         csv_df = change_time_frequency(csv_df, ch_timefreqs)
 
     csv_index = False
     if resample_defs is not None:
-        print("%Inf:csv_trimtime:resampling", file=sys.stderr)
+        print("%Inf:csv_trimtime:resampling:[{}]".format(resample_defs), file=sys.stderr)
         csv_df = do_rsampling(csv_df, resample_defs, resample_func)
         csv_index = True
 
-    if t_select is not None:
-        print("%Inf:csv_trimtime:select time", file=sys.stderr)
-        csv_df = do_select_time(csv_df, t_select)
+    if t_select_dt is not None:
+        print("%Inf:csv_trimtime:select datetime:[{}]".format(t_select_dt), file=sys.stderr)
+        csv_df = do_select_datetime(csv_df, t_select_dt)
+
+    if t_select_hours is not None:
+        print("%Inf:csv_trimtime:select hours:[{}]".format(t_select_hours), file=sys.stderr)
+        csv_df = do_select_hours(csv_df, t_select_hours)
         csv_index = True
 
     csv_df.to_csv(output_file, index=csv_index, date_format=out_date_fmt)
