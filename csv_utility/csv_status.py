@@ -198,7 +198,7 @@ def status_by_mode(df, output, mode, group_col, opt_args):
         opt_args = [0]
 
     if mode == "count":
-        r_df = w_df.count(numeric_only=True)
+        r_df = w_df.count()
     elif mode == "sum":
         r_df = w_df.sum(numeric_only=True)
     elif mode == "avg":

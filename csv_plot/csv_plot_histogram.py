@@ -152,7 +152,7 @@ def make_number_hist(df, column, sort_mode, params):
     else:
         pareto_df.sort_index(ascending=True, inplace=True)
 
-    pareto_df["index"] = np.round(pareto_df["index"], 2)
+    # pareto_df["index"] = np.round(pareto_df["index"], 2)
     pareto_df["index"] = pareto_df["index"].apply(lambda x: "{}".format(x))
 
     return pareto_df
@@ -169,11 +169,11 @@ def plot_pareto_chart(df, column, sort_mode, params):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(
-        go.Bar(x=pareto_df["index"], y=pareto_df[col], name="cumulative persentage"),
+        go.Bar(x=pareto_df["index"], y=pareto_df[col], name="count"),
         secondary_y=False,
     )
     fig.add_trace(
-        go.Scatter(x=pareto_df["index"], y=pareto_df["cumulative persentage"], name="cumulative persentage"),
+        go.Scatter(x=pareto_df["index"], y=pareto_df["cumulative persentage"], name="cumulative persentage", mode='markers'),
         secondary_y=True,
     )
     fig.update_layout(xaxis=dict(type="category"))
