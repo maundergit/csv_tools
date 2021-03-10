@@ -19,6 +19,12 @@ import sys
 # import pprint
 
 import pandas as pd
+from distutils.version import LooseVersion
+
+PANDAS_MIN_VERSION = "1.1.3"
+if LooseVersion(PANDAS_MIN_VERSION) > LooseVersion(pd.__version__):
+    print("??Error:csv_uty:padnas version must be newer than {}.".format(PANDAS_MIN_VERSION), file=sys.stderr)
+    sys.exit(1)
 
 VERSION = 1.0
 
@@ -204,7 +210,7 @@ def status_by_mode(df, output, mode, group_col, opt_args):
     elif mode == "avg":
         r_df = w_df.mean(numeric_only=True)
     elif mode == "std":
-        r_df = w_df.std(numeric_only=True)
+        r_df = w_df.std()
     elif mode == "min":
         r_df = w_df.min(numeric_only=True)
     elif mode == "max":
