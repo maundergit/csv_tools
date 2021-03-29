@@ -35,14 +35,14 @@ MODE_TABLE_DESC = {
     "std": "Return sample standard deviation over index",
     "min": "Return the minimum of the values for index",
     "max": "Return the maximum of the values for index",
-    "mode": "Get the mode(s) of each element along index",
+    "mode": "without '--group': Get the mode(s) of each element along index",
     "median": "Return the median of the values for index",
     "rank": "Compute numerical data ranks (1 through n) along index",
     "sem": "Return unbiased standard error of the mean over index",
     "skew": "Return unbiased skew over index",
     "var": "Return unbiased variance over index",
-    "mad": "Return the mean absolute deviation of the values for index",
-    "kurt": "Return unbiased kurtosis over index",
+    "mad": "without '--group':Return the mean absolute deviation of the values for index",
+    "kurt": "without '--group': Return unbiased kurtosis over index",
     "quantile25": "Return values at the given quantile over(=25%)",
     "quantile50": "Return values at the given quantile over(=50%)=median",
     "quantile75": "Return values at the given quantile over(=75%)",
@@ -204,39 +204,39 @@ def status_by_mode(df, output, mode, group_col, opt_args):
         opt_args = [0]
 
     if mode == "count":
-        r_df = w_df.count(numeric_only=True)
+        r_df = w_df.count()
     elif mode == "sum":
         r_df = w_df.sum(numeric_only=True)
     elif mode == "avg":
         r_df = w_df.mean(numeric_only=True)
     elif mode == "std":
-        r_df = w_df.std(numeric_only=True)
+        r_df = w_df.std()
     elif mode == "min":
         r_df = w_df.min(numeric_only=True)
     elif mode == "max":
         r_df = w_df.max(numeric_only=True)
-    elif mode == "mode":
+    elif group_col is None and mode == "mode":
         r_df = w_df.mode(numeric_only=True)
     elif mode == "median":
         r_df = w_df.median(numeric_only=True)
     elif mode == "rank":
-        r_df = w_df.rank(numeric_only=True)
+        r_df = w_df.rank()
     elif mode == "sem":
         r_df = w_df.sem()
     elif mode == "skew":
         r_df = w_df.skew(numeric_only=True)
     elif mode == "var":
-        r_df = w_df.var(numeric_only=True)
-    elif mode == "mad":
+        r_df = w_df.var()
+    elif group_col is None and mode == "mad":
         r_df = w_df.mad(axis=0, skipna=True)
-    elif mode == "kurt":
+    elif group_col is None and mode == "kurt":
         r_df = w_df.kurt(axis=0, skipna=True, numeric_only=True)
     elif mode == "quantile25":
-        r_df = w_df.quantile(q=0.25, numeric_only=True)
+        r_df = w_df.quantile(q=0.25)
     elif mode == "quantile50":
-        r_df = w_df.quantile(q=0.50, numeric_only=True)
+        r_df = w_df.quantile(q=0.50)
     elif mode == "quantile75":
-        r_df = w_df.quantile(q=0.75, numeric_only=True)
+        r_df = w_df.quantile(q=0.75)
     elif mode == "nunique":
         r_df = w_df.nunique()
     elif mode == "cumsum":
