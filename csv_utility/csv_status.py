@@ -204,13 +204,13 @@ def status_by_mode(df, output, mode, group_col, opt_args):
         opt_args = [0]
 
     if mode == "count":
-        r_df = w_df.count()
+        r_df = w_df.count(numeric_only=True)
     elif mode == "sum":
         r_df = w_df.sum(numeric_only=True)
     elif mode == "avg":
         r_df = w_df.mean(numeric_only=True)
     elif mode == "std":
-        r_df = w_df.std()
+        r_df = w_df.std(numeric_only=True)
     elif mode == "min":
         r_df = w_df.min(numeric_only=True)
     elif mode == "max":
