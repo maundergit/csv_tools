@@ -38,6 +38,7 @@ remark:
 example:
   csv_plot_bar.py --output=test.html test_bar.csv count
   csv_plot_bar.py --format=html --category=medal --barmode=group test_bar.csv nation count
+  csv_plot_bar.py --output=test_bar_dt.html --category=medal --barmode=group --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt count
   input:
   ,nation,medal,count
   0,South Korea,gold,24
@@ -79,6 +80,13 @@ example:
                             help="name of column as aimation",
                             type=str,
                             metavar='column',
+                            default=None)
+
+    arg_parser.add_argument("--datetime",
+                            dest="XDATETIME",
+                            help="format of x as datetime",
+                            type=str,
+                            metavar='DATETIME_FORMAT',
                             default=None)
 
     arg_parser.add_argument("--xrange", dest="XRANGE", help="range of x", type=str, metavar='XMIN,XMAX')
@@ -151,6 +159,7 @@ if __name__ == "__main__":
         y_columns = re.split(r'\s*,\s*', x_column)
         x_column = None
 
+    x_datetime_format = args.XDATETIME
     xrange_s = args.XRANGE
     xrange = None
     if xrange_s is not None:
@@ -200,6 +209,12 @@ if __name__ == "__main__":
     if x_column is None:
         x_column = "csv_plot_bar_x"
         csv_df[x_column] = range(len(csv_df))
+    elif x_datetime_format is not None:
+        try:
+            csv_df[x_column] = pd.to_datetime(csv_df[x_column], format=x_datetime_format)
+        except Exception as e:
+            print(f"??error: invalid datetime format {x_datetime_format} for {x_column}", file=sys.stderr)
+            sys.exit(1)
 
     if facet_mode:
         facet_params = {}

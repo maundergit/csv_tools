@@ -81,6 +81,19 @@ example:
 
     arg_parser.add_argument("--trendline", dest="TREND", help="trendline mode", choices=["ols", "lowess"], default=None)
 
+    arg_parser.add_argument("--x_datetime",
+                            dest="XDATETIME",
+                            help="format of x as datetime",
+                            type=str,
+                            metavar='DATETIME_FORMAT',
+                            default=None)
+    arg_parser.add_argument("--y_datetime",
+                            dest="YDATETIME",
+                            help="format of y as datetime",
+                            type=str,
+                            metavar='DATETIME_FORMAT',
+                            default=None)
+
     arg_parser.add_argument("--xrange", dest="XRANGE", help="range of x", type=str, metavar='XMIN,XMAX')
     arg_parser.add_argument("--yrange", dest="YRANGE", help="range of y", type=str, metavar='YMIN,YMAX')
     arg_parser.add_argument("--log_x", dest="LOG_X", help="log-scaled x axis", action="store_true", default=False)
@@ -148,6 +161,8 @@ if __name__ == "__main__":
     x_column = args.x_column
     y_column = args.y_column
 
+    x_datetime_format = args.XDATETIME
+    y_datetime_format = args.YDATETIME
     xrange_s = args.XRANGE
     xrange = None
     if xrange_s is not None:
@@ -221,6 +236,18 @@ if __name__ == "__main__":
         side_hist_params = None
 
     fig_params = {"x": x_column, "y": y_column}
+    if x_datetime_format is not None:
+        try:
+            csv_df[x_column] = pd.to_datetime(csv_df[x_column], format=x_datetime_format)
+        except Exception as e:
+            print(f"??error: invalid datetime format {x_datetime_format} for {x_column}", file=sys.stderr)
+            sys.exit(1)
+    if y_datetime_format is not None:
+        try:
+            csv_df[y_column] = pd.to_datetime(csv_df[y_column], format=y_datetime_format)
+        except Exception as e:
+            print(f"??error: invalid datetime format {y_datetime_format} for {y_column}", file=sys.stderr)
+            sys.exit(1)
     # if spline_mode:
     #     fig_params.update({"line_shape": "vh"})
 

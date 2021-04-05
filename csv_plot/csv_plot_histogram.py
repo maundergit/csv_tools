@@ -52,6 +52,7 @@ example:
 
   csv_plot_histogram.py --output=test.html --pareto_chart --nbins=100 a10.csv value
   csv_plot_histogram.py --output=test.html --pareto_chart --pareto_sort_mode=axis --nbins=100 a10.csv value
+  csv_plot_histogram.py --output=test_hist_dt.html --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt
 
 '''))
 
@@ -88,6 +89,13 @@ example:
                             help="name of column as aimation",
                             type=str,
                             metavar='column',
+                            default=None)
+
+    arg_parser.add_argument("--datetime",
+                            dest="XDATETIME",
+                            help="format of x as datetime",
+                            type=str,
+                            metavar='DATETIME_FORMAT',
                             default=None)
 
     arg_parser.add_argument("--xrange", dest="XRANGE", help="range of x", type=str, metavar='XMIN,XMAX')
@@ -228,6 +236,7 @@ if __name__ == "__main__":
     x_col_name = args.x_column[0]
     y_col_name = args.y_column
 
+    x_datetime_format = args.XDATETIME
     xrange_s = args.XRANGE
     xrange = None
     if xrange_s is not None:
@@ -281,6 +290,13 @@ if __name__ == "__main__":
         fig_params = {"x": x_col_name, "y": y_col_name}
     else:
         fig_params = {"x": x_col_name}
+
+    if x_datetime_format is not None:
+        try:
+            csv_df[x_col_name] = pd.to_datetime(csv_df[x_col_name], format=x_datetime_format)
+        except Exception as e:
+            print(f"??error: invalid datetime format {x_datetime_format} for {x_col_name}", file=sys.stderr)
+            sys.exit(1)
 
     fig_params["histfunc"] = hist_func
 
