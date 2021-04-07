@@ -92,10 +92,15 @@ else
 fi
 #----
 
+OFS=${IFS}
+IFS=$'\n'
 GREP_RESULTS=($(grep -n -E "${PATTERN}" ${INPUT}))
+IFS=${OFS}
 echo "number of matched records: ${#GREP_RESULTS[@]}" 1>&2
 RESULTS=()
-for line in "${GREP_RESULTS[@]}"; do
+NPTS=$((${#GREP_RESULTS[@]}))
+for idx in $(seq 0 ${NPTS}); do
+    line=${GREP_RESULTS[${idx}]}
     ROW=$(echo ${line}| awk -F: "{print \$1}")
     ROW=$((${ROW}-1))
     CS=$(echo ${line} | tr "," "\n")
