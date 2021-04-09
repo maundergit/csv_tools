@@ -235,7 +235,7 @@ if __name__ == "__main__":
             fig_params["category_orders"] = {}
         fig_params["animation_frame"] = animation_col
         if len(csv_df[animation_col].value_counts()) > 100:
-            print("??error:csv_plot_bar:too many values in column for animation:{}".fromat(animation_col), file=sys.stderr)
+            print("??error:csv_plot_bar:too many values in column for animation:{}".format(animation_col), file=sys.stderr)
             sys.exit(1)
         fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
 
