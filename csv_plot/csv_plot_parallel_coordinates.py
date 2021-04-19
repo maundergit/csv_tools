@@ -35,6 +35,11 @@ remark:
   key colmun must have only numeric values.
   all others columns has numeric values.
   if columns has discrete values, then use '--discrete'.
+
+  for animation column, colon ":" must be escaped by "\". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   csv_plot_parallel_coordinates.py --format=html big_sample_arb.csv COL_0097 COL_0008,COL_0033
   csv_plot_parallel_coordinates.py --format=html --discrete big_sample_arb.csv COL_0008 COL_0006,COL_0002,COL_0023
@@ -59,7 +64,7 @@ example:
                             dest="ANIMATION_COL",
                             help="name of column as aimation",
                             type=str,
-                            metavar='column',
+                            metavar='column[:datetime_format]',
                             default=None)
 
     arg_parser.add_argument("--output", dest="OUTPUT", help="path of output file", type=str, metavar="FILE")
@@ -148,13 +153,20 @@ if __name__ == "__main__":
         fig_params["range_color"] = xrange
 
     if animation_col is not None:
-        if "category_orders" not in fig_params:
-            fig_params["category_orders"] = {}
-        fig_params["animation_frame"] = animation_col
-        if len(csv_df[animation_col].value_counts()) > 100:
-            print("??error:csv_plot_bar:too many values in column for animation:{}".format(animation_col), file=sys.stderr)
+        cvs = re.split(r"\s*(?<!\\):\s*", animation_col, maxsplit=1)
+        ani_col = cvs[0]
+        ani_col = re.sub(r"\\:", ":", ani_col)
+        fig_params["animation_frame"] = ani_col
+        if len(csv_df[ani_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".format(ani_col), file=sys.stderr)
             sys.exit(1)
-        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
+        if len(cvs) > 1:
+            t_format = cvs[1]
+            csv_df = pd.to_datetime(csv_df[ani_col], format=t_format)
+        else:
+            if "category_orders" not in fig_params:
+                fig_params["category_orders"] = {}
+            fig_params["category_orders"].update({ani_col: sorted([v[0] for v in csv_df[ani_col].value_counts().items()])})
 
     print("""
 ==== plot chart from csv

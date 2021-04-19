@@ -35,6 +35,11 @@ remark:
   When there is scant data a histogram or box plot just is not informative. 
   This is a great use for a one dimensional scatter plot, dot plot, or a what is called a strip chart in R.
 
+  for animation column, colon ":" must be escaped by "\". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
+
 example:
   import plotly.express as px
   df = px.data.tips()
@@ -65,7 +70,7 @@ example:
                             dest="ANIMATION_COL",
                             help="name of column as aimation",
                             type=str,
-                            metavar='column',
+                            metavar='column[:datetime_format]',
                             default=None)
 
     arg_parser.add_argument("--datetime",
@@ -235,13 +240,20 @@ if __name__ == "__main__":
         fig_params["category_orders"] = figco
 
     if animation_col is not None:
-        if "category_orders" not in fig_params:
-            fig_params["category_orders"] = {}
-        fig_params["animation_frame"] = animation_col
-        if len(csv_df[animation_col].value_counts()) > 100:
-            print("??error:csv_plot_bar:too many values in column for animation:{}".format(animation_col), file=sys.stderr)
+        cvs = re.split(r"\s*(?<!\\):\s*", animation_col, maxsplit=1)
+        ani_col = cvs[0]
+        ani_col = re.sub(r"\\:", ":", ani_col)
+        fig_params["animation_frame"] = ani_col
+        if len(csv_df[ani_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".format(ani_col), file=sys.stderr)
             sys.exit(1)
-        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
+        if len(cvs) > 1:
+            t_format = cvs[1]
+            csv_df = pd.to_datetime(csv_df[ani_col], format=t_format)
+        else:
+            if "category_orders" not in fig_params:
+                fig_params["category_orders"] = {}
+            fig_params["category_orders"].update({ani_col: sorted([v[0] for v in csv_df[ani_col].value_counts().items()])})
 
     if len(categ_orders) > 0:
         if "category_orders" in fig_params:
