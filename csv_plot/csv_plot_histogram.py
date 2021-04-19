@@ -20,6 +20,7 @@ import re
 import json
 from pathlib import Path
 
+import math
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -45,10 +46,17 @@ remark:
       '--xrange', '--yrange', '--nbins', '--output', '--format', '--with', '--height', '--packed_html'
   '--pareto_sort_mode=axis' may be usefull to estimate threhold.
 
+  for animation column, colon ":" must be escaped by "\". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
+  about '--nbin_mode', see Histogram - Wikipedia https://en.wikipedia.org/wiki/Histogram .
+
 example:
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --log_y --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --side_hist=rug --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --side_hist=rug --log_y --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv "ABC001" "ABC002"
+  csv_plot_histogram.py --nbin_mode="square-root" --output=test_plot_hist.html test_plot.csv "ABC001" "ABC002"
 
   csv_plot_histogram.py --output=test.html --pareto_chart --nbins=100 a10.csv value
   csv_plot_histogram.py --output=test.html --pareto_chart --pareto_sort_mode=axis --nbins=100 a10.csv value
@@ -60,6 +68,12 @@ example:
     arg_parser.add_argument("--title", dest="TITLE", help="title of chart", type=str, metavar='TEXT', default="")
 
     arg_parser.add_argument("--nbins", dest="NBINS", help="number of bins,default=10", type=int, metavar='INT', default=10)
+    arg_parser.add_argument("--nbin_modes",
+                            dest="NBIN_MODE",
+                            help="method to evaluate number of bins. if given, '--nbins' is ignored.",
+                            choices=["square-root", "sturges", "rice", "doane"],
+                            default=None)
+
     arg_parser.add_argument("--side_hist",
                             dest="SIDE_HIST",
                             help="side histogram mode",
@@ -88,7 +102,7 @@ example:
                             dest="ANIMATION_COL",
                             help="name of column as aimation",
                             type=str,
-                            metavar='column',
+                            metavar='column[:datetime_format]',
                             default=None)
 
     arg_parser.add_argument("--datetime",
@@ -202,6 +216,24 @@ def plot_pareto_chart(df, column, sort_mode, params):
     return fig, pareto_df
 
 
+def evaluate_number_of_bin(npts, mode, skew):
+    if mode == "square-root":
+        nbins = math.ceil(math.sqrt(npts))
+    elif mode == "sturges":
+        nbins = math.ceil(math.log2(npts)) + 1
+    elif mode == "rice":
+        nbins = math.ceil(2 * math.pow(npts, 1 / 3))
+    elif mode == "doane":
+        sig = math.sqrt((6 * (npts - 2)) / ((npts + 1) * (npts + 3)))
+        nbins = 1 + math.log2(npts) + math.log2(1 + abs(skew) / sig)
+    else:
+        mes = f"??error:csv_plot_histogram:invalid mode to evaluate number of bins:{mode}"
+        print(mes, file=sys.stderr)
+        raise ValueError(mes)
+    nbins = int(nbins)
+    return nbins
+
+
 if __name__ == "__main__":
     args = init()
     csv_file = args.csv_file[0]
@@ -257,6 +289,7 @@ if __name__ == "__main__":
             yrange = list(map(float, yrange))
 
     nbin = args.NBINS
+    nbin_mode = args.NBIN_MODE
 
     facets = args.FACETS
     facet_mode = False
@@ -285,6 +318,9 @@ if __name__ == "__main__":
     # 2D Histograms | Python | Plotly https://plotly.com/python/2D-Histogram/
     csv_df = pd.read_csv(csv_file)
 
+    if nbin_mode is not None:
+        nbin = evaluate_number_of_bin(len(csv_df[x_col_name]), nbin_mode, csv_df[x_col_name].skew())
+        print(f"%inf:csv_plot_histogram:number of bins={nbin}", file=sys.stderr)
     nbin_params = {"nbins": nbin}
     if y_col_name is not None:
         fig_params = {"x": x_col_name, "y": y_col_name}
@@ -349,13 +385,20 @@ if __name__ == "__main__":
         fig_params["category_orders"] = {x_col_name: sorted(csv_df[x_col_name].value_counts().keys())}
 
     if animation_col is not None:
-        if "category_orders" not in fig_params:
-            fig_params["category_orders"] = {}
-        fig_params["animation_frame"] = animation_col
-        if len(csv_df[animation_col].value_counts()) > 100:
-            print("??error:csv_plot_bar:too many values in column for animation:{}".format(animation_col), file=sys.stderr)
+        cvs = re.split(r"\s*(?<!\\):\s*", animation_col, maxsplit=1)
+        ani_col = cvs[0]
+        ani_col = re.sub(r"\\:", ":", ani_col)
+        fig_params["animation_frame"] = ani_col
+        if len(csv_df[ani_col].value_counts()) > 100:
+            print("??error:csv_plot_bar:too many values in column for animation:{}".format(ani_col), file=sys.stderr)
             sys.exit(1)
-        fig_params["category_orders"].update({animation_col: sorted([v[0] for v in csv_df[animation_col].value_counts().items()])})
+        if len(cvs) > 1:
+            t_format = cvs[1]
+            csv_df = pd.to_datetime(csv_df[ani_col], format=t_format)
+        else:
+            if "category_orders" not in fig_params:
+                fig_params["category_orders"] = {}
+            fig_params["category_orders"].update({ani_col: sorted([v[0] for v in csv_df[ani_col].value_counts().items()])})
 
     if len(categ_orders) > 0:
         if "category_orders" in fig_params:
