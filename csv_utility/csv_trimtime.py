@@ -630,6 +630,7 @@ def do_select_datetime(df, select_dt_def):
         t_col = cvs[0]
         t_fmt = cvs[1]
         t_range = cvs[2]
+        t_fmt = re.sub(r"\\", "", t_fmt)
     else:
         t_col = cvs[0]
         t_range = cvs[1]
