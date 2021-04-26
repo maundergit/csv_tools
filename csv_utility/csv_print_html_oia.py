@@ -20,6 +20,8 @@ import zipfile
 import re
 import html
 
+import minify_html
+
 import seaborn as sns
 import pandas as pd
 
@@ -68,6 +70,7 @@ IDX,B,C,O,I,A
     arg_parser.add_argument("--search_on_html", dest="SHTML", help="searching on html is enable", action="store_true", default=False)
 
     arg_parser.add_argument("--output_file", dest="OUTPUT", help="path of output file", type=str, metavar='FILE', default=sys.stdout)
+    arg_parser.add_argument("--minify", dest="MINIFY", help="minifing html", action="store_true", default=False)
 
     arg_parser.add_argument('csv_file', metavar='CSV_FILE', help='file to read, if empty, stdin is used')
 
@@ -321,6 +324,8 @@ if __name__ == "__main__":
 
     search_on_html = args.SHTML
 
+    html_minify = args.MINIFY
+
     pcolors = None
     if pcolors_s is not None:
         pcolors = re.split(r"\s*(?<!\\),\s*", pcolors_s)
@@ -344,5 +349,13 @@ if __name__ == "__main__":
     html_str += table_str
     html_str += "</div>"
     html_str += html_epiloge()
+
+    if html_minify:
+        try:
+            html_str = minify_html.minify(html_str, minify_js=True, minify_css=True)
+        except SyntaxError as e:
+            mes = f'??error:csv_print_html_oia:{e}'
+            print(mes, file=sys.stderr)
+            sys.exit(1)
 
     print(html_str, file=output_file)
