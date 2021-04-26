@@ -22,6 +22,8 @@ from pathlib import Path
 import zipfile
 
 import re
+import html
+
 import seaborn as sns
 import pandas as pd
 
@@ -45,6 +47,10 @@ remark:
 
   When '--bar' is used, others than '--trim_null' are not available.
 
+  For '--part_color', is you want to use comma(,) an colon(:) in word, then those must be escaped by "\".
+
+  NOTE:NOW, '--max_column_width' is not available.
+
 example:
   csv_print_html.py --highlight=2 --gradient=all --max_in_col=all --min_in_col=all t1.csv > test.html
   csv_print_html.py --bar=all --trim_null="-"=all t1.csv > test.html
@@ -53,6 +59,9 @@ example:
   csv_print_html.py --highlight=2 --title=HightLight=2 t1.csv > test.html
   csv_print_html.py --bar=all --trim_null="-"=all --columns=A,B,C t1.csv > test.html
   csv_print_html.py --min_in_row=all t1.csv > test.html
+  csv_print_html.py --part_color="Joseph:red,Beesley\, Mr. Lawrence:blue" titanic.csv > test.html
+  csv_print_html.py --part_color='Joseph:red,Beesley\, Mr. Lawrence:blue,female:green,C\d+:black' titanic.csv > test.html
+  csv_print_html.py --part_color='Joseph:red,Beesley\, Mr. Lawrence:blue,female:green,C\d+:black' --column_width="Name:128px" titanic.csv > test.html
 
 '''))
 
@@ -117,6 +126,26 @@ example:
                             type=str,
                             metavar='(all or ROW:ROW,COL:COL)',
                             default=None)
+
+    arg_parser.add_argument("--max_column_width",
+                            dest="MAX_CWIDTH",
+                            help="maximum width of all columns, default='200pm'",
+                            type=str,
+                            metavar="WIDTH",
+                            default="200pm")
+    arg_parser.add_argument("--column_width",
+                            dest="CWIDTHS",
+                            help="widths of columns",
+                            type=str,
+                            metavar="COLUMN:WIDTH[,COLUMN:WIDTH..]",
+                            default=None)
+    arg_parser.add_argument("--part_color",
+                            dest="PCOLORS",
+                            help="part color for string, color code is one in css codes.",
+                            type=str,
+                            metavar='STRING:COLOR[,STRING:COLOR...]',
+                            default=None)
+    arg_parser.add_argument("--search_on_html", dest="SHTML", help="searching on html is enable", action="store_true", default=False)
 
     arg_parser.add_argument("--datatable", dest="DATATBL", help="datatble mode", action="store_true", default=False)
     arg_parser.add_argument("--output_file", dest="OUTPUT", help="path of output file", type=str, metavar='FILE', default=sys.stdout)
@@ -304,7 +333,7 @@ def do_trim_null(dsty, tnull_defs):
     return dsty
 
 
-def html_prologe(align_center=True, width=None, datatable=False):
+def html_prologe(align_center=True, width=None, datatable=False, word_colors="", search_on_html=False):
     table_css = ""
     datatable_header = ""
     if datatable:
@@ -331,18 +360,78 @@ def html_prologe(align_center=True, width=None, datatable=False):
             table_css += "width:{};".format(width)
         table_css = '''
     <style type="text/css">
+      /* */
+      body {{
+        background: -webkit-linear-gradient(left, #25c481, #25b7c4);
+        background: linear-gradient(to right, #25c481, #25b7c4);
+      }}
+      span.word_view_span {{
+        font-weight:bold;
+        background:#EEEEEE;
+        box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.4);
+        border-radius: 4px;
+        padding-left:0.5em;
+        padding-right:0.5em;
+	margin-right:2pt;
+      }}
+      fieldset {{
+        border:  1px solid #ccc;
+        border-radius: 5px;
+        padding: 25px;
+        margin-top: 20px;
+      }}
+      legend {{
+        border:  1px solid #ccc;
+        border-bottom: 0;
+        border-radius: 5px 5px 0 0;
+        padding: 8px 18px 0;
+        position:relative;
+        top: -14px;
+      }}
+
       table {{ 
          {}
+         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
       }}
       table caption {{
          font-size:large; font-weight: bold;
       }}
       th {{
-          background-color: #6495ed;
+          /* background-color: #6495ed; */
+         background-color: #009879;
+	 padding:6px;
       }}
       thead tr th {{
          border-bottom: solid 1px;
-       }}
+         color: #ffffff;
+      }}
+      /* Table CSS: Creating beautiful HTML tables with CSS - DEV Community https://dev.to/dcodeyt/creating-beautiful-html-tables-with-css-428l */
+      tbody tr {{
+         border-bottom: 1px solid #dddddd;
+         background-color: #ffffff;
+      }}
+      tbody tr:nth-of-type(even) {{
+         background-color: #f3f3f3;
+      }}
+      tbody tr:last-of-type {{
+         border-bottom: 2px solid #009879;
+      }}
+      /*  CSSのposition: stickyでテーブルのヘッダー行・列を固定する - Qiita https://qiita.com/orangain/items/6268b6528ab33b27f8f2 */
+      table.sticky_table thead th {{
+         position: -webkit-sticky;
+         position: sticky;
+         top: 0;
+         z-index: 1;
+      }}
+      table.sticky_table th:first-child {{
+         position: -webkit-sticky;
+         position: sticky;
+         left: 0;
+      }}
+      table.sticky_table thead th:first-child {{
+         z-index: 2;
+      }}
+
     </style>
 '''.format(table_css)
 
@@ -360,6 +449,59 @@ def html_prologe(align_center=True, width=None, datatable=False):
   </head>
   <body>
 """.format(table_css, datatable_header)
+
+    if search_on_html:
+        text += """
+   <script type="text/javascript">
+        function word_color(word,color_code){{
+            var nodes= document.getElementsByTagName("td");
+            for(var i=0; i< nodes.length; i++){{
+                let wre= word.replace(/[\\^$.*+?()[\]{{}}|]/g, '\\$&');
+                wre= wre.replace(/</g, '&lt;');
+                wre= wre.replace(/>/g, '&gt;');
+                let re= new RegExp('('+wre+')','gi');
+                nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
+            }}
+        }}
+        function word_color_reset(){{
+            var nodes= document.getElementsByTagName("td");
+            for(var i=0; i< nodes.length; i++){{
+                let re = new RegExp('<span class="word_view_span" style="color:[^\"]+">([^<]+?)</span>','gi');
+                nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+            }}
+        }}
+
+        function emphasis_words(obj){{
+            var wc_defs= obj.value;
+            let re= /\s*(?<!\\\\),\s*/;
+            var cvs= wc_defs.split(re);
+            word_color_reset();
+            cvs.forEach(
+                function (val ){{
+                    let re= /\s*(?<!\\\\):\s*/;
+                    cvs=val.split(re);
+                    if( cvs.length < 2){{
+                        alert("??error:word_view:invalid definition:"+wc_defs);
+                    }} else {{
+                        var w= cvs[0];
+                        var c= cvs[1];
+                        word_color(w,c);
+                    }}
+                }}
+            );
+        }}
+   </script>
+    <form action="" onsubmit="return false;">
+      <fieldset style="padding-top:0pt;padding-bottom:0pt;">
+	<legend>極色付け定義</legend>
+	<input type="text" size="80" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"></input><br/>
+        <span style="font-size:small;">
+	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。<br>
+        Ex: ABC:red,DEF\,GHI:blue,\d+人:black
+        </span>
+      </fieldset>
+    </form>
+""".format(word_colors)
 
     return text
 
@@ -385,6 +527,46 @@ def html_epiloge(datatable=False):
     return text
 
 
+def part_color(pcolors, text):
+    for pc in pcolors:
+        cvs = re.split(r"(?<!\\):", pc)
+        if len(cvs) < 2:
+            print(f"??error:csv_print_html:invalid format for --part_color:{pc}", file=sys.stderr)
+            sys.exit(1)
+        w = cvs[0]
+        w = re.sub(r"\\([,:])", r"\1", w)
+        w = w.strip("'\"")
+        w = html.escape(w)
+        w0 = "(" + w + ")"
+        c = cvs[1]
+        # fmt = f"color:{c};font-weight:bold;background:#EEEEEE;box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.4);border-radius: 4px;padding-left:0.5em;padding-right:0.5em;"
+        fmt = f"color:{c};"
+        sp = f'<span class="word_view_span" style="{fmt}">\\1</span>'
+        text = re.sub(w0, sp, text)
+    return text
+
+
+def set_max_column_width(df_sty, max_width="200px"):
+    df_sty.set_properties(subset=list(df_sty.columns), **{'max-width': max_width})
+    return df_sty
+
+
+def set_column_width(column_widths, df_sty):
+    print(f"%inf;csv_print_html:column widths:{column_widths}", file=sys.stderr)
+    for cw in column_widths:
+        cvs = re.split(r"(?<!\\):", cw)
+        if len(cvs) < 2:
+            print(f"??error:csv_print_html:invalid format for --column_width:{cw}", file=sys.stderr)
+            sys.exit(1)
+        c = cvs[0]
+        w = cvs[1]
+        if c not in df_sty.columns:
+            print(f"??error:csv_print_html:column {c} was not found for {cw}", file=sys.stderr)
+            sys.exit(1)
+        df_sty.set_properties(subset=[c], **{'width': w})
+    return df_sty
+
+
 if __name__ == "__main__":
     args = init()
     csv_file = args.csv_file
@@ -404,6 +586,21 @@ if __name__ == "__main__":
     bar_mode = args.BAR
     tnull = args.TNULL
 
+    max_column_width = args.MAX_CWIDTH
+    column_widths_s = args.CWIDTHS
+    pcolors_s = args.PCOLORS
+    search_on_html = args.SHTML
+
+    pcolors = None
+    if pcolors_s is not None:
+        pcolors = re.split(r"\s*(?<!\\),\s*", pcolors_s)
+        print(f"%inf:csv_print_html:part colors: {pcolors}", file=sys.stderr)
+    else:
+        pcolors_s = ""
+    column_widths = None
+    if column_widths_s is not None:
+        column_widths = re.split(r"\s*(?<!\\),\s*", column_widths_s)
+
     if datatable_mode:
         misc_zip_name = "csv_print_html_misc.zip"
         scr_path = Path(__file__).resolve()
@@ -416,6 +613,10 @@ if __name__ == "__main__":
         else:
             datatable_mode = False
             print("#warn:csv_print_html: {} was not found".format(misc_zip_name), file=sys.stderr)
+    if datatable_mode:
+        if search_on_html:
+            print("#warn:csv_print_html:search_on_html is disable for datatable_mode", file=sys.stderr)
+        search_on_html = False
 
     if bar_mode is not None and (h_max_col is not None or h_min_col is not None or h_max_row is not None or h_min_row is not None
                                  or highlight is not None or bg_gradient is not None):
@@ -437,13 +638,18 @@ if __name__ == "__main__":
         output_file = open(output_file, "w")
 
     # Styling  pandas 1.1.4 documentation https://pandas.pydata.org/docs/user_guide/style.html
-    csv_df = pd.read_csv(csv_file)
+    csv_df = pd.read_csv(csv_file, dtype='object')
 
     if len(columns) > 0:
         csv_df = csv_df[columns]
 
+    csv_df = csv_df.applymap(lambda x: html.escape(x))
+
+    if pcolors is not None and len(pcolors) > 0:
+        csv_df = csv_df.applymap(lambda x: part_color(pcolors, str(x)))
     # print(csv_df.describe())
 
+    # csv_df.reset_index(inplace=True)
     df_sty = csv_df.style
 
     df_sty = set_fp_precision(df_sty, fp_prec)
@@ -485,10 +691,16 @@ if __name__ == "__main__":
     if title is not None:
         df_sty = set_caption(df_sty, title)
 
-    html_str = html_prologe(width=None, datatable=datatable_mode)
+    df_sty = set_max_column_width(df_sty, max_width=max_column_width)
+    # df_sty.set_table_attributes('class="sticky_table display nowrap" style="width:100%"')
+    df_sty.set_table_attributes('class="sticky_table display nowrap"')
+    if column_widths is not None:
+        df_sty = set_column_width(column_widths, df_sty)
+
+    html_str = html_prologe(width=None, datatable=datatable_mode, word_colors=pcolors_s, search_on_html=search_on_html)
     html_str += "<div id='tablecontainer'>"
     table_str = df_sty.render()
-    table_str = re.sub(r"<table ([^>]+)>", r"<table \1 class='display nowrap' style='width:100%'>", table_str)
+    # table_str = re.sub(r"<table ([^>]+)>", r"<table \1 class='display nowrap' style='width:100%'>", table_str)
     html_str += table_str
     html_str += "</div>"
     html_str += html_epiloge(datatable=datatable_mode)
