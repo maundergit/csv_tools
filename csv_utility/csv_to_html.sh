@@ -97,9 +97,10 @@ fi
 
 INPUT=$1
 INPUT=$(check_and_get_stdin "${INPUT}")
+INPUT_BASE=$(basename ${INPUT})
 
-PREFIX=${INPUT%.*}
-SUFFIX=${INPUT#${INPUT%.*}.}
+PREFIX=${INPUT_BASE%.*}
+SUFFIX=${INPUT_BASE#${INPUT_BASE%.*}.}
 OUTPUT=${PREFIX}.html
 
 #----
