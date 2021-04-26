@@ -227,7 +227,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
     <form action="" onsubmit="return false;">
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
 	<legend>極色付け定義</legend>
-	<input type="text" size="80" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"></input><br/>
+	<input type="text" size="80" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
         <span style="font-size:small;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。<br>
         Ex: ABC:red,DEF\,GHI:blue,\d+人:black
