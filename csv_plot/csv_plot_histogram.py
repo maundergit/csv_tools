@@ -22,10 +22,14 @@ from pathlib import Path
 
 import math
 import numpy as np
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
 import plotly.express as px
 import pandas as pd
+
+from scipy.stats import moment
 
 VERSION = 1.0
 
@@ -51,6 +55,7 @@ remark:
   see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
   about '--nbin_mode', see Histogram - Wikipedia https://en.wikipedia.org/wiki/Histogram .
+  NOTE 's_and_s' means Shimazaki and Shinomoto's choice.
 
 example:
   csv_plot_histogram.py --nbins=50 --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
@@ -71,7 +76,7 @@ example:
     arg_parser.add_argument("--nbin_modes",
                             dest="NBIN_MODE",
                             help="method to evaluate number of bins. if given, '--nbins' is ignored.",
-                            choices=["square-root", "sturges", "rice", "doane"],
+                            choices=["square-root", "sturges", "rice", "doane", "s_and_s", "freedman_diaconis"],
                             default=None)
 
     arg_parser.add_argument("--side_hist",
@@ -216,22 +221,65 @@ def plot_pareto_chart(df, column, sort_mode, params):
     return fig, pareto_df
 
 
-def evaluate_number_of_bin(npts, mode, skew):
-    if mode == "square-root":
-        nbins = math.ceil(math.sqrt(npts))
-    elif mode == "sturges":
-        nbins = math.ceil(math.log2(npts)) + 1
-    elif mode == "rice":
-        nbins = math.ceil(2 * math.pow(npts, 1 / 3))
-    elif mode == "doane":
-        sig = math.sqrt((6 * (npts - 2)) / ((npts + 1) * (npts + 3)))
-        nbins = 1 + math.log2(npts) + math.log2(1 + abs(skew) / sig)
-    else:
+def evaluate_number_of_bin(ds_0, mode):
+    ds = ds_0.dropna()
+    npts = len(ds)
+    nbin_tabl = {}
+    nbin_tabl["square-root"] = math.ceil(math.sqrt(npts))
+    nbin_tabl["sturges"] = math.ceil(math.log2(npts)) + 1
+    nbin_tabl["rice"] = math.ceil(2 * math.pow(npts, 1 / 3))
+    sig = math.sqrt((6 * (npts - 2)) / ((npts + 1) * (npts + 3)))
+    skw = moment(ds, moment=3)
+    nbin_tabl["doane"] = int(1 + math.log2(npts) + math.log2(1 + abs(skw) / sig))
+    nbin_tabl["s_and_s"] = evaluate_number_of_bin_Shimazaki_and_Shinomoto(ds)
+    nbin_tabl["freedman_diaconis"] = evaluate_number_of_bin_Freedman_Diaconis(ds)
+
+    if mode not in nbin_tabl:
         mes = f"??error:csv_plot_histogram:invalid mode to evaluate number of bins:{mode}"
         print(mes, file=sys.stderr)
         raise ValueError(mes)
-    nbins = int(nbins)
+    print(f"%inf:csv_plot_histgoram:evaluate_number_of_bin:required mode={mode}", file=sys.stderr)
+    for k in nbin_tabl.keys():
+        print(f"\t{k}={nbin_tabl[k]}", file=sys.stderr)
+    nbins = int(nbin_tabl[mode])
     return nbins
+
+
+def evaluate_number_of_bin_Shimazaki_and_Shinomoto(ds, N_MIN=4, N_MAX=100):
+    # GitHub - oldmonkABA/optimal_histogram_bin_width: Method to compute equal sized Optimal Histogram Bin Width https://github.com/oldmonkABA/optimal_histogram_bin_width
+    # https://www.neuralengine.org/res/code/python/histsample_torii.py https://www.neuralengine.org/res/code/python/histsample_torii.py
+    x = ds.array
+    x_max = max(x)
+    x_min = min(x)
+    N0 = np.arange(N_MIN, N_MAX)
+    D = (x_max - x_min) / N0  # bin size vector
+    Cost = np.zeros(shape=(np.size(D), 1))
+    Cost = np.zeros(np.size(D))
+
+    for i in range(np.size(N0)):
+        ki = np.histogram(x, bins=N0[i])
+        ki = ki[0]
+        k = np.mean(ki)
+        v = np.var(ki)
+        Cost[i] = (2 * k - v) / (D[i]**2)
+
+    idx = np.argmin(Cost)
+    cmin = Cost[idx]  # minimum cost
+    optD = D[idx]  # optiomum bin
+
+    print(f" {cmin}, {N0[idx]}, {optD}", file=sys.stderr)
+
+    return N0[idx]
+
+
+def evaluate_number_of_bin_Freedman_Diaconis(ds):
+
+    iqr = ds.quantile(.75) - ds.quantile(.25)
+
+    npts = len(ds)
+    bin_width = 2 * iqr / math.pow(npts, 1 / 3)
+    nbin = int(np.ceil((ds.max() - ds.min()) / bin_width))
+    return nbin
 
 
 if __name__ == "__main__":
@@ -319,7 +367,7 @@ if __name__ == "__main__":
     csv_df = pd.read_csv(csv_file)
 
     if nbin_mode is not None:
-        nbin = evaluate_number_of_bin(len(csv_df[x_col_name]), nbin_mode, csv_df[x_col_name].skew())
+        nbin = evaluate_number_of_bin(csv_df[x_col_name], nbin_mode)
         print(f"%inf:csv_plot_histogram:number of bins={nbin}", file=sys.stderr)
     nbin_params = {"nbins": nbin}
     if y_col_name is not None:
