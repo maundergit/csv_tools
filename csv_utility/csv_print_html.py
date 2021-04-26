@@ -486,6 +486,8 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                         alert("??error:word_view:invalid definition:"+wc_defs);
                     }} else {{
                         var w= cvs[0];
+                        let re= new RegExp('\\\\\\\\([,:])','g');
+	                w=w.replace(re,'$1');
                         var c= cvs[1];
                         word_color(w,c);
                     }}
