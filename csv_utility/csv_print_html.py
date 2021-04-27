@@ -151,10 +151,10 @@ example:
 
     arg_parser.add_argument("--datatable", dest="DATATBL", help="datatble mode", action="store_true", default=False)
     arg_parser.add_argument("--output_file", dest="OUTPUT", help="path of output file", type=str, metavar='FILE', default=sys.stdout)
+    arg_parser.add_argument("--minify", dest="MINIFY", help="minifing html", action="store_true", default=False)
 
     arg_parser.add_argument('csv_file', metavar='CSV_FILE', help='files to read, if empty, stdin is used')
-    # arg_parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin)
-    # arg_parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
+
     args = arg_parser.parse_args()
     return args
 
@@ -367,6 +367,12 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
         background: -webkit-linear-gradient(left, #25c481, #25b7c4);
         background: linear-gradient(to right, #25c481, #25b7c4);
       }}
+      form.word_search {{
+        position: fixed;
+        top: 1em;
+        visibility:hidden;
+        z-index: 100;
+      }}
       span.word_view_span {{
         font-weight:bold;
         background:#EEEEEE;
@@ -381,6 +387,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
         border-radius: 5px;
         padding: 25px;
         margin-top: 20px;
+        background-color: #e0ffff;
       }}
       legend {{
         border:  1px solid #ccc;
@@ -389,6 +396,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
         padding: 8px 18px 0;
         position:relative;
         top: -14px;
+        background-color: #e0ffff;
       }}
 
       table {{ 
@@ -440,7 +448,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
     text = """
 <?xml version="1.0" encoding="utf-8"?>
 <html>
-  <!- made by csv_print_html.py -->
+  <!-- made by csv_print_html.py -->
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta http-equiv="Pragma" content="no-cache">
@@ -452,6 +460,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
   <body>
 """.format(table_css, datatable_header)
 
+    word_colors = re.sub(r"\"", "&quot;", word_colors)
     if search_on_html:
         text += """
    <script type="text/javascript">
@@ -494,11 +503,21 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                 }}
             );
         }}
+        function show_word_search(){{
+            let fobj= document.getElementById("word_search");
+
+            sty_visibility=fobj.style.visibility;
+            if( sty_visibility == "" || sty_visibility == "hidden"){{
+                fobj.style.visibility="visible"
+            }} else {{
+                fobj.style.visibility="hidden"
+            }}
+        }}
    </script>
-    <form action="" onsubmit="return false;">
+    <form action="" onsubmit="return false;" class="word_search" id="word_search" ondblclick="show_word_search();">
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
-	<legend>極色付け定義</legend>
-	<input type="text" size="80" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
+	<legend>語句色付け定義</legend>
+	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
         <span style="font-size:small;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。<br>
         Ex: ABC:red,DEF\,GHI:blue,\d+人:black
@@ -506,6 +525,8 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
       </fieldset>
     </form>
 """.format(word_colors)
+    else:
+        text += f'<input value="{word_colors}" style="display:none" />\n'
 
     return text
 
@@ -540,7 +561,7 @@ def part_color(pcolors, text):
         w = cvs[0]
         w = re.sub(r"\\([,:])", r"\1", w)
         w = w.strip("'\"")
-        w = html.escape(w)
+        w = html.escape(str(w))
         w0 = "(" + w + ")"
         c = cvs[1]
         # fmt = f"color:{c};font-weight:bold;background:#EEEEEE;box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.4);border-radius: 4px;padding-left:0.5em;padding-right:0.5em;"
@@ -603,6 +624,7 @@ if __name__ == "__main__":
         print(f"%inf:csv_print_html:part colors: {pcolors}", file=sys.stderr)
     else:
         pcolors_s = ""
+
     column_widths = None
     if column_widths_s is not None:
         column_widths = re.split(r"\s*(?<!\\),\s*", column_widths_s)
@@ -649,7 +671,8 @@ if __name__ == "__main__":
     if len(columns) > 0:
         csv_df = csv_df[columns]
 
-    csv_df = csv_df.applymap(lambda x: html.escape(x))
+    csv_df.fillna("", inplace=True)
+    csv_df = csv_df.applymap(lambda x: html.escape(str(x)))
 
     if pcolors is not None and len(pcolors) > 0:
         csv_df = csv_df.applymap(lambda x: part_color(pcolors, str(x)))
@@ -706,10 +729,13 @@ if __name__ == "__main__":
     html_str = html_prologe(width=None, datatable=datatable_mode, word_colors=pcolors_s, search_on_html=search_on_html)
     html_str += "<div id='tablecontainer'>"
     table_str = df_sty.render()
+
     # table_str = re.sub(r"<table ([^>]+)>", r"<table \1 class='display nowrap' style='width:100%'>", table_str)
     html_str += table_str
     html_str += "</div>"
     html_str += html_epiloge(datatable=datatable_mode)
+
+    html_str = re.sub(r"<thead", '<thead ondblclick="show_word_search();"', html_str)
 
     if html_minify:
         try:

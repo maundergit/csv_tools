@@ -22,7 +22,6 @@ import html
 
 import minify_html
 
-import seaborn as sns
 import pandas as pd
 
 VERSION = 1.0
@@ -97,6 +96,12 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         text-align:center;
         margin-bottom: 0pt;
       }}
+      form.word_search {{
+        position: fixed;
+        top: 1.5em;
+        visibility:hidden;
+        z-index: 100;
+      }}
       span.word_view_span {{
         font-weight:bold;
         background:#EEEEEE;
@@ -111,6 +116,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         border-radius: 5px;
         padding: 25px;
         margin-top: 20px;
+        background-color: #e0ffff;
       }}
       legend {{
         border:  1px solid #ccc;
@@ -119,6 +125,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         padding: 8px 18px 0;
         position:relative;
         top: -14px;
+        background-color: #e0ffff;
       }}
 
       table {{ 
@@ -170,7 +177,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
     text = """
 <?xml version="1.0" encoding="utf-8"?>
 <html>
-  <!- made by csv_print_html_oia.py -->
+  <!-- made by csv_print_html_oia.py -->
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta http-equiv="Pragma" content="no-cache">
@@ -183,6 +190,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
     if title is not None and len(title) > 0:
         text += f'<h2 class="title">{title}</h2>'
 
+    word_colors = re.sub(r"\"", "&quot;", word_colors)
     if search_on_html:
         text += """
    <script type="text/javascript">
@@ -225,11 +233,21 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                 }}
             );
         }}
+        function show_word_search(){{
+            let fobj= document.getElementById("word_search");
+
+            sty_visibility=fobj.style.visibility;
+            if( sty_visibility == "" || sty_visibility == "hidden"){{
+                fobj.style.visibility="visible"
+            }} else {{
+                fobj.style.visibility="hidden"
+            }}
+        }}
    </script>
-    <form action="" onsubmit="return false;">
+    <form action="" onsubmit="return false;" class="word_search" id="word_search" ondblclick="show_word_search();">
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
-	<legend>極色付け定義</legend>
-	<input type="text" size="80" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
+	<legend>語句色付け定義</legend>
+	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
         <span style="font-size:small;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。<br>
         Ex: ABC:red,DEF\,GHI:blue,\d+人:black
@@ -237,6 +255,8 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
       </fieldset>
     </form>
 """.format(word_colors)
+    else:
+        text += f'<input value="{word_colors}" style="display:none" />\n'
 
     return text
 
@@ -271,7 +291,7 @@ def part_color(pcolors, text):
         w = cvs[0]
         w = re.sub(r"\\([,:])", r"\1", w)
         w = w.strip("'\"")
-        w = html.escape(w)
+        w = html.escape(str(w))
         w0 = "(" + w + ")"
         c = cvs[1]
         fmt = f"color:{c};"
@@ -282,31 +302,39 @@ def part_color(pcolors, text):
 
 def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
     html_str = '\n<table class="sticky_table display nowrap" style="width:100%;">\n'
-    html_str += '<thead>\n'
+    html_str += '<thead ondblclick="show_word_search();">\n'
     n_oia = len(oia_columns)
     for c in columns:
         html_str += f"<th>{c}</th>\n"
     html_str += f'<th colspan="{n_oia+1}">Observation/Investigation/Action</th>\n'
     html_str += '</thead>\n<tbody>\n'
 
+    df.fillna("", inplace=True)
     for ir, row in df.iterrows():
         if ir % 2 == 0:
             tr_sty = 'style="background-color:#eeffee;"'
         else:
             tr_sty = ""
         html_str += f"<tr {tr_sty}>\n"
+        check_empty = all([v == "" for v in row[oia_columns]])
+        n_oia_h = 1 if check_empty else n_oia
         for c in columns:
             v = html.escape(str(row[c]))
             if pcolors is not None and len(pcolors) > 0:
                 v = part_color(pcolors, v)
-            html_str += f'<td rowspan="{n_oia}">{v}</td>\n'
-        for ic, c in enumerate(oia_columns):
-            v = html.escape(str(row[c]))
-            if pcolors is not None and len(pcolors) > 0:
-                v = part_color(pcolors, v)
-            html_str += (f'<td width="{space_width}"></td>' * ic) + f'<td colspan="{4-ic}">{v}</td>\n'
-            if ic < len(oia_columns) - 1:
-                html_str += f'</tr>\n<tr {tr_sty}>\n'
+            v = "&nbsp;" if v == "" else v
+            html_str += f'<td rowspan="{n_oia_h}">{v}</td>\n'
+        if not check_empty:
+            for ic, c in enumerate(oia_columns):
+                v = html.escape(str(row[c]))
+                if pcolors is not None and len(pcolors) > 0:
+                    v = part_color(pcolors, v)
+                v = "&nbsp;" if v == "" else v
+                html_str += (f'<td width="{space_width}"></td>' * ic) + f'<td colspan="{4-ic}">{v}</td>\n'
+                if ic < len(oia_columns) - 1:
+                    html_str += f'</tr>\n<tr {tr_sty}>\n'
+        else:
+            html_str += '<td></td>' * n_oia
         html_str += "</tr>\n"
     html_str += "</tbody>\n</table>\n"
 
@@ -332,6 +360,8 @@ if __name__ == "__main__":
     if pcolors_s is not None:
         pcolors = re.split(r"\s*(?<!\\),\s*", pcolors_s)
         print(f"%inf:csv_print_html:part colors: {pcolors}", file=sys.stderr)
+    else:
+        pcolors_s = ""
 
     columns = []
     if columns_s is not None:
@@ -343,7 +373,7 @@ if __name__ == "__main__":
     if output_file != sys.stdout:
         output_file = open(output_file, "w")
 
-    csv_df = pd.read_csv(csv_file)
+    csv_df = pd.read_csv(csv_file, dtype='object')
 
     html_str = html_prologe_oia(width=None, word_colors=pcolors_s, search_on_html=search_on_html, title=title)
     html_str += "<div id='tablecontainer'>"
