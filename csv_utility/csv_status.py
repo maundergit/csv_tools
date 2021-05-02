@@ -217,6 +217,8 @@ def status_by_mode(df, output, mode, group_col, opt_args):
         r_df = w_df.max(numeric_only=True)
     elif group_col is None and mode == "mode":
         r_df = w_df.mode(numeric_only=True)
+    elif group_col is not None and mode == "mode":
+        r_df = w_df.apply(lambda x: x.mode())
     elif mode == "median":
         r_df = w_df.median(numeric_only=True)
     elif mode == "rank":
