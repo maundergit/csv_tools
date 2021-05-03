@@ -360,6 +360,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
             table_css += "margin-left: auto;margin-right: auto;"
         if width is not None:
             table_css += "width:{};".format(width)
+        # text-shadow: 0.1em 0.1em 0.6em gold;
         table_css = '''
     <style type="text/css">
       /* */
@@ -376,18 +377,19 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
       span.word_view_span {{
         font-weight:bold;
         background:#EEEEEE;
-        box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.4);
-        border-radius: 4px;
-        padding-left:0.5em;
-        padding-right:0.5em;
-	margin-right:2pt;
+        box-shadow: 0.0625em 0.0625em 0.0625em 0.0625em rgba(0,0,0,0.4);
+        border-radius: 0.25em;
+        padding-left:0.2em;
+        padding-right:0.2em;
+	margin-right:0.2em;
       }}
       fieldset {{
-        border:  1px solid #ccc;
+        border: 2px solid #ccc;
         border-radius: 5px;
         padding: 25px;
         margin-top: 20px;
         background-color: #e0ffff;
+        box-shadow: 5px 5px 5px rgba(0,0,0,0.2);
       }}
       legend {{
         border:  1px solid #ccc;
@@ -466,42 +468,67 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
    <script type="text/javascript">
         function word_color(word,color_code){{
             var nodes= document.getElementsByTagName("td");
+            let count=0;
             for(var i=0; i< nodes.length; i++){{
-                let wre= word.replace(/[\\^$.*+?()[\]{{}}|]/g, '\\$&');
-                wre= wre.replace(/</g, '&lt;');
+                // let wre= word.replace(/[\\^$.*+?()\\[\\]{{}}|]/g, '\\\\$&');
+                let wre= word.replace(/</g, '&lt;');
                 wre= wre.replace(/>/g, '&gt;');
-                let re= new RegExp('('+wre+')','gi');
+                let re= new RegExp('(?<!<[^>]*)('+wre+')','gi');
                 nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
+                count= count+ (nodes[i].innerHTML.match(re) ||[]).length;
             }}
+            return count;
         }}
         function word_color_reset(){{
             var nodes= document.getElementsByTagName("td");
             for(var i=0; i< nodes.length; i++){{
-                let re = new RegExp('<span class="word_view_span" style="color:[^\"]+">([^<]+?)</span>','gi');
-                nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                span_head='<span class="word_view_span"'
+                let re = new RegExp(span_head+' style="color:[^\"]+">([^<]+?)</span>','gi');
+                while( nodes[i].innerHTML.indexOf(span_head) != -1){{
+                    nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                }}
             }}
         }}
-
         function emphasis_words(obj){{
-            var wc_defs= obj.value;
+            let wc_defs= obj.value;
+            let re_s= new RegExp(/(?<!\\\\)\s*,\s*/,'g')
+            obj.value= obj.value.replace(re_s,", ");
             let re= /\s*(?<!\\\\),\s*/;
-            var cvs= wc_defs.split(re);
+            let cvs= wc_defs.split(re);
+            let word_counts={{}};
             word_color_reset();
             cvs.forEach(
                 function (val ){{
+                    if(val==""){{
+                        return;
+                    }}
                     let re= /\s*(?<!\\\\):\s*/;
                     cvs=val.split(re);
+                    var w="";
+                    var c="";
                     if( cvs.length < 2){{
-                        alert("??error:word_view:invalid definition:"+wc_defs);
+                        // alert("??error:word_view:invalid definition:"+val);
+                        w= cvs[0];
+                        c="red";
                     }} else {{
-                        var w= cvs[0];
                         let re= new RegExp('\\\\\\\\([,:])','g');
-	                w=w.replace(re,'$1');
-                        var c= cvs[1];
-                        word_color(w,c);
+                        w= cvs[0];
+                        w=w.replace(re,'$1');
+                        c= cvs[1];
+                    }}
+                    if(!c.match(/^[a-zA-Z0-9#]+$/)){{
+                        alert("??error:word_view:invalid color code: '"+c+"'");
+                        return;
+                    }}
+                    try{{
+                        word_counts[String(w)]=word_color(w,c);
+                    }} catch(e){{
+                        alert("??error:word_view:invalid definition:"+val+":"+e);
                     }}
                 }}
             );
+            let swr= document.getElementById('search_word_result');
+            swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
         }}
         function show_word_search(){{
             let fobj= document.getElementById("word_search");
@@ -518,10 +545,14 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
 	<legend>語句色付け定義</legend>
 	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
-        <span style="font-size:small;">
-	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。<br>
+        <span style="font-size:0.5em;">
+	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句には正規表現を利用可能<br>
+        語句だけ指定した場合は、赤色が指定されたものとして処理される。
+        語句に半角カンマ、コロンを含める場合はBackslash(\\)によりエスケープする必要がある。
+        また、&lt;&gt;は検索時に&amp;lt;&amp;gt;として検索されることに注意。<br>
         Ex: ABC:red,DEF\,GHI:blue,\d+人:black
-        </span>
+        </span><br>
+        <span style="font-size:small;" id="search_word_result"></span>
       </fieldset>
     </form>
 """.format(word_colors)
@@ -556,8 +587,9 @@ def part_color(pcolors, text):
     for pc in pcolors:
         cvs = re.split(r"(?<!\\):", pc)
         if len(cvs) < 2:
-            print(f"??error:csv_print_html:invalid format for --part_color:{pc}", file=sys.stderr)
-            sys.exit(1)
+            # print(f"??error:csv_print_html:invalid format for --part_color:{pc}", file=sys.stderr)
+            # sys.exit(1)
+            cvs.append("red")
         w = cvs[0]
         w = re.sub(r"\\([,:])", r"\1", w)
         w = w.strip("'\"")
