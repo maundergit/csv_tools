@@ -71,7 +71,7 @@ OSは Ubuntu 18/20 において開発、動作確認を実施している。
   `csv_sqlite_insert.sh,csv_to_db_csvkit.sh,csv_to_db_shell.sh`にて使用
 - [xsv](https://github.com/BurntSushi/xsv) 0.13.0  
   `csv_join.sh,csv_status_xsv.sh,csv_tool_list.sh`にて使用
-- [jq](https://github.com/sgreben/jp)  
+- [jp](https://github.com/sgreben/jp)  
   `csv_hist_console.sh`にて使用
 
 
@@ -81,11 +81,11 @@ conda install pillow openpyxl lmfit numpy pandas scipy seaborn statsmodels
 pip install --upgrade csvtotable
 ```
 
-plotly,xsv,jqについては、以下を参照してインストールを行う。
+plotly,xsv,jpについては、以下を参照してインストールを行う。
 
 - plotlyについては [Getting Started with Plotly \| Python \| Plotly](https://plotly.com/python/getting-started/) を参照のこと  
 - xsv については [BurntSushi/xsv: A fast CSV command line toolkit written in Rust\.](https://github.com/BurntSushi/xsv) を参照のこと  
-- jq については [sgreben/jp: dead simple terminal plots from JSON data\. single binary, no dependencies\. linux, osx, windows\.](https://github.com/sgreben/jp) を参照のこと
+- jp については [sgreben/jp: dead simple terminal plots from JSON data\. single binary, no dependencies\. linux, osx, windows\.](https://github.com/sgreben/jp) を参照のこと
 
 
 ### インストール
