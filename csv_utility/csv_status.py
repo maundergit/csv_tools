@@ -117,7 +117,12 @@ example:
                             default=None)
 
     arg_parser.add_argument("--mode", dest="MODE", help="name of columns to make group", choices=MODE_TABLE, default=None)
-    arg_parser.add_argument("--group", dest="GCOLUMN", help="name of columns to make group", type=str, metavar='COLUMN', default=None)
+    arg_parser.add_argument("--group",
+                            dest="GCOLUMN",
+                            help="name of columns to make group with '--mode'",
+                            type=str,
+                            metavar='COLUMN',
+                            default=None)
     arg_parser.add_argument("--arguments", dest="OPTARGS", help="arguments for some mode", type=str, metavar="ARG[,ARG...]", default=None)
 
     arg_parser.add_argument("--output",
