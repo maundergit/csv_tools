@@ -178,7 +178,7 @@ date,value,G
         "format is datetime format, default='%%Y-%%m-%%d %%H:%%M:%%S'. 'step' is integer value, default=1." +
         " if you use comma or colon in expression, those must be escaped with back-slash",
         type=str,
-        metavar='COLUMN:definition',
+        metavar='COLUMN=definition',
         default=None)
 
     arg_parser.add_argument(
