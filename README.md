@@ -120,6 +120,9 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 
 各コマンドのヘルプメッセージを [csv_plot_help](csv_plot/csv_plot_help.md)と[csv_utility_help](csv_utility/csv_utility_help.md)にまとめている。
 
+## 例用例
+
+- [テキスト文書の時系列データ分析](TextTimeseries.md)
 
 ## 主として利用しているライブラリなど
 
