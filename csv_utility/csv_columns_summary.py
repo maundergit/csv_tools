@@ -65,7 +65,7 @@ example:
 
 
 def count_in_series(ds, string_for_count):
-    if format(ds.dtype) == 'object' or format(ds.dtype) == 'string'):
+    if format(ds.dtype) == 'object' or format(ds.dtype) == 'string':
         result = ds[ds == count_s].count()
     elif np.dtype('float64') == ds.dtype or np.dtype('int64') == ds.dtype:
         try:
