@@ -360,7 +360,9 @@ ABC000,ABC001,ABC002,ABC003,ABC004,ABC005,ABC006,ABC007,ABC008,ABC009,ABC010
 </pre>
 ## csv_histogram.py
 <pre>
-usage: csv_histogram.py [-h] [-v] [--nbins INT] [--range LOWER_X,UPPER_X]
+usage: csv_histogram.py [-h] [-v] [--nbins INT]
+                        [--nbin_modes {square-root,sturges,rice,doane,s_and_s,freedman_diaconis}]
+                        [--range LOWER_X,UPPER_X]
                         [--facets COLUMN[,COLUMN...]] [--output FILE]
                         CSV_FILE COLUMN [WEIGHT_COLUMN]
 
@@ -375,6 +377,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --nbins INT           number of bins, default=20
+  --nbin_modes {square-root,sturges,rice,doane,s_and_s,freedman_diaconis}
+                        method to evaluate number of bins. if given, '--nbins'
+                        is ignored.
   --range LOWER_X,UPPER_X
                         range of x
   --facets COLUMN[,COLUMN...]
@@ -383,6 +388,10 @@ optional arguments:
 
 remark:
   '--range' and 'weight_column' are available for only numerical 'column'.
+
+  about '--nbin_mode', see Histogram - Wikipedia https://en.wikipedia.org/wiki/Histogram .
+  NOTE 's_and_s' means Shimazaki and Shinomoto's choice.
+
 example:
   csv_histogram.py --nbins=100 --output=- big_sample_arb.csv  COL_0008|less
   csv_histogram.py --nbins=100 --output=- --range=0.5,1.0 big_sample_arb.csv  COL_0008 COL_0033|less
@@ -635,8 +644,12 @@ usage: csv_print_html.py [-h] [-v] [--title TITLE]
                          [--min_in_row (all or ROW:ROW,COL:COL)]
                          [--max_in_row (all or ROW:ROW,COL:COL)]
                          [--gradient (all or ROW:ROW,COL:COL)]
-                         [--bar (all or ROW:ROW,COL:COL] [--datatable]
-                         [--output_file FILE]
+                         [--bar (all or ROW:ROW,COL:COL]
+                         [--max_column_width WIDTH]
+                         [--column_width COLUMN:WIDTH[,COLUMN:WIDTH..]]
+                         [--part_color STRING:COLOR[,STRING:COLOR...]]
+                         [--search_on_html] [--datatable] [--output_file FILE]
+                         [--minify]
                          CSV_FILE
 
 print html table made of csv with estimation
@@ -667,8 +680,16 @@ optional arguments:
                         gradient mode
   --bar (all or ROW:ROW,COL:COL)
                         histogram of each column
+  --max_column_width WIDTH
+                        maximum width of all columns, default='200pm'
+  --column_width COLUMN:WIDTH[,COLUMN:WIDTH..]
+                        widths of columns
+  --part_color STRING:COLOR[,STRING:COLOR...]
+                        part color for string, color code is one in css codes.
+  --search_on_html      searching on html is enable
   --datatable           datatble mode
   --output_file FILE    path of output file
+  --minify              minifing html
 
 remark:
   Elements in only columns, that has int64/float64 as dtype, will be processed.
@@ -683,6 +704,10 @@ remark:
 
   When '--bar' is used, others than '--trim_null' are not available.
 
+  For '--part_color', is you want to use comma(,) an colon(:) in word, then those must be escaped by "".
+
+  NOTE:NOW, '--max_column_width' is not available.
+
 example:
   csv_print_html.py --highlight=2 --gradient=all --max_in_col=all --min_in_col=all t1.csv > test.html
   csv_print_html.py --bar=all --trim_null="-"=all t1.csv > test.html
@@ -691,6 +716,131 @@ example:
   csv_print_html.py --highlight=2 --title=HightLight=2 t1.csv > test.html
   csv_print_html.py --bar=all --trim_null="-"=all --columns=A,B,C t1.csv > test.html
   csv_print_html.py --min_in_row=all t1.csv > test.html
+  csv_print_html.py --part_color="Joseph:red,Beesley\, Mr. Lawrence:blue" titanic.csv > test.html
+  csv_print_html.py --part_color='Joseph:red,Beesley\, Mr. Lawrence:blue,female:green,C\d+:black' titanic.csv > test.html
+  csv_print_html.py --part_color='Joseph:red,Beesley\, Mr. Lawrence:blue,female:green,C\d+:black' --column_width="Name:128px" titanic.csv > test.html
+
+
+</pre>
+## csv_print_html_oia.py
+<pre>
+usage: csv_print_html_oia.py [-h] [-v] [--title TITLE]
+                             [--columns COLUMNS[,COLUMNS...]]
+                             [--part_color STRING:COLOR[,STRING:COLOR...]]
+                             [--search_on_html] [--output_file FILE]
+                             [--minify]
+                             CSV_FILE COLUMNS [COLUMNS ...]
+
+print html table made of csv with estimation
+
+positional arguments:
+  CSV_FILE              file to read, if empty, stdin is used
+  COLUMNS               colum names of Observation/Investigation/Action
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  --title TITLE         Title of table
+  --columns COLUMNS[,COLUMNS...]
+                        names of addtional columns
+  --part_color STRING:COLOR[,STRING:COLOR...]
+                        part color for string, color code is one in css codes.
+  --search_on_html      searching on html is enable
+  --output_file FILE    path of output file
+  --minify              minifing html
+
+remark:
+
+  For '--part_color', is you want to use comma(,) an colon(:) in word, then those must be escaped by "".
+
+example:
+  cat test3.csv
+IDX,B,C,O,I,A
+1,A,Sample1,Observation1:this is a pen,Investigation1:Atre you there?,Action1: nothing to do
+2,B,Sample2,Observation2:this is a pen,Investigation2:Atre you there?,Action2: nothing to do
+3,C,Sample3,Observation3:this is a pen,Investigation2:Atre you there?,Action3: nothing to do
+
+  csv_print_html_oia.py --columns=IDX,B,C --part_color='this:red' test3.csv  O I A > test.html
+  csv_print_html_oia.py --columns=IDX,B,C --part_color='バリ島:red,米国:green,潜水艦:blue,海軍:black' --search_on_html test3.csv  O I A > test.html
+
+
+</pre>
+## csv_print_html_tl.py
+<pre>
+usage: csv_print_html_tl.py [-h] [-v] [--title TITLE]
+                            [--datetime_format FORMAT] [--group_column COLUMN]
+                            [--headline_column COLUMN]
+                            [--columns COLUMNS[,COLUMNS...]]
+                            [--part_color STRING:COLOR[,STRING:COLOR...]]
+                            [--group_by_part_color] [--media COLUMN[:COLUMN]]
+                            [--cdn] [--output_file FILE] [--minify]
+                            CSV_FILE COLUMN_OF_DATETIME COLUMN [COLUMN ...]
+
+print html table made of csv with estimation
+
+positional arguments:
+  CSV_FILE              file to read, if empty, stdin is used
+  COLUMN_OF_DATETIME    name of column of datetime
+  COLUMN                colum names of Observation/Investigation/Action
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  --title TITLE         title and description
+  --datetime_format FORMAT
+                        format string for column of datetime,default=%Y-%m-%d
+                        %H:%M:%S
+  --group_column COLUMN
+                        names of column to make group
+  --headline_column COLUMN
+                        names of column for short text
+  --columns COLUMNS[,COLUMNS...]
+                        names of addtional columns
+  --part_color STRING:COLOR[,STRING:COLOR...]
+                        part color for string, color code is one in css codes.
+  --group_by_part_color
+                        grouping by result of part_color
+  --media COLUMN[:COLUMN]
+                        columns for medias
+  --cdn                 using CDN(cdn.knightlab.com), default=local
+  --output_file FILE    path of output file
+  --minify              minifing html
+
+remark:
+
+  Generated html uses script of TimelineJS3. if you used CDN(cdn.knightlab.com), use '--cdn'.
+  Without '--cdn', those scripts must be gotten from 'cdn.knightlab.com' and 
+  those scripts must be stored in 'timeline3' directory in the same directory as html.
+  see "Loading Files Locally" section in Timeline https://timeline.knightlab.com/docs/instantiate-a-timeline.html .
+
+  For '--part_color', is you want to use comma(,) an colon(:) in word, then those must be escaped by "".
+  Using '--group_by_part_color', words in '--part_color' are used as group of event.
+  when '--part_color' is used, also gantt chart for plantUML will be created. 
+  then value of column('--headingline_column') will be used as task name.
+
+  about '--media':
+  TimelineJS3 has function to show media(image,vide,etc) for each event.
+  using '--media' option, this function is enable: 
+  path of media file is given by this option. optional column is column that has title string of each media file.
+
+  aboutn TimelineJS3 see following:
+  GitHub - NUKnightLab/TimelineJS3: TimelineJS v3: A Storytelling Timeline built in JavaScript. http://timeline.knightlab.com https://github.com/NUKnightLab/TimelineJS3
+
+example:
+  cat test3.csv
+IDX,B,DT,C,O,I,A,image,title_of_image
+1,A,2021-06-01 10:00:00,Sample1,Observation1:this is a pen,Investigation1:Atre you there?,Action1: nothing to do,pattern.png,sample
+2,B,2021-07-01 10:00:00,Sample2,Observation2:this is a pen,Investigation2:Atre you there?,Action2: nothing to do,pattern.png,sample
+3,C,2021-08-01 10:00:00,Sample3,Observation3:this is a pen,Investigation2:Atre you there?,Action3: nothing to do,pattern.png,sample
+
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html test3.csv DT O I A
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html --group_column=B test3.csv DT O I A
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html --group_column=B --headline_column=B test3.csv DT O I A
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html --group_column=B --headline_column=B --title="Title
+description" test3.csv DT O I A
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html --group_by_part_color --headline_column=B --title="Title\ndescription" test3.csv DT O I A
+  csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black' --output=test.html --group_by_part_color --headline_column=B --media=image:title_of_image --title="Title
+description" test3.csv DT O I A
 
 
 </pre>
@@ -872,7 +1022,7 @@ optional arguments:
   --columns COLUMNS     name or index of columns as csv format
   --mode {count,sum,avg,std,min,max,mode,median,rank,sem,skew,var,mad,kurt,quantile25,quantile50,quantile75,nunique,cumsum,cumprod,vrange,notzero,zero,morethan,lessthan,positive,negative}
                         name of columns to make group
-  --group COLUMN        name of columns to make group
+  --group COLUMN        name of columns to make group with '--mode'
   --arguments ARG[,ARG...]
                         arguments for some mode
   --output FILE         path of output csv file, default=stdout
@@ -890,14 +1040,14 @@ remark:
     std   :Return sample standard deviation over index
     min   :Return the minimum of the values for index
     max   :Return the maximum of the values for index
-    mode  :Get the mode(s) of each element along index
+    mode  :without '--group': Get the mode(s) of each element along index
     median:Return the median of the values for index
     rank  :Compute numerical data ranks (1 through n) along index
     sem   :Return unbiased standard error of the mean over index
     skew  :Return unbiased skew over index
     var   :Return unbiased variance over index
-    mad   :Return the mean absolute deviation of the values for index
-    kurt  :Return unbiased kurtosis over index
+    mad   :without '--group':Return the mean absolute deviation of the values for index
+    kurt  :without '--group': Return unbiased kurtosis over index
     quantile25:Return values at the given quantile over(=25%)
     quantile50:Return values at the given quantile over(=50%)=median
     quantile75:Return values at the given quantile over(=75%)
@@ -976,16 +1126,21 @@ B1,B2,B3,B4,B5,B6,B7,B8
 </pre>
 ## csv_trimtime.py
 <pre>
-usage: csv_trimtime.py [-h] [-v] [--get_range_of_time COLUMN[:format]:unit]
+usage: csv_trimtime.py [-h] [-v]
+                       [--get_range_of_time COLUMN[:datetime_format]:unit]
+                       [--sort_datetime COLUMN_NAME:datetime_format]
                        [--timestamp COLUMN_1:COLUMN_0]
                        [--add_time_column COLUMN:start:freq]
                        [--reformat COLUMN:in_format[:out_format]]
                        [--gap COLUMN=definition[,COLUMN=definition...]]
                        [--time_gap COLUMN=definition[,COLUMN=definition...]]
+                       [--calculate_time_diff COLUMN=definition]
+                       [--calculate_elapsed_time COLUMN:definition]
                        [--change_timefreq COLUMN=definition[,COLUMN=definition...]]
-                       [--resample COLUMN[:time_format]:freq:COLUMN[,COLUMN...]]
-                       [--resample_function {count,sum,min,max,mean,std}]
-                       [--select COLUMN[:time_format]:start_time,end_time]
+                       [--resample COLUMN[:time_format]:freq:COLUMN_TO_RESAMPLE[,COLUMN...]]
+                       [--resample_function {nearest,count,sum,min,max,mean,std,linear,quadratic,cubic,spline,barycentric,polynomial,krogh,piecewise_polynomial,pchip,akima,cubicspline}]
+                       [--select_hours COLUMN[:time_format]:start_time,end_time]
+                       [--select_datetime COLUMN[:time_format]:start_time,end_time]
                        [--output FILE]
                        CSV_FILE
 
@@ -997,40 +1152,70 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
-  --get_range_of_time COLUMN[:format]:unit
-                        range of time of column, available unit:H,M,S
+  --get_range_of_time COLUMN[:datetime_format]:unit
+                        range of time of column, available unit:H,M,S if you
+                        use comma or colon in expression, those must be
+                        escaped with back-slash
+  --sort_datetime COLUMN_NAME:datetime_format
+                        sort datetime, format of
+                        definition=column_name[:datetime_format].default
+                        datetime_format='%Y-%m-%d %H:%M:%S'. if you use comma
+                        or colon in expression, those must be escaped with
+                        back-slash
   --timestamp COLUMN_1:COLUMN_0
                         convert date time column(COLUMN_0) into
                         timestamp(COLUMN_1)
   --add_time_column COLUMN:start:freq
                         add new column of time series
   --reformat COLUMN:in_format[:out_format]
-                        change format of datetime of column
+                        change format of datetime of column if you use comma
+                        or colon in expression, those must be escaped with
+                        back-slash
   --gap COLUMN=definition[,COLUMN=definition...]
-                        group by value gap:format of definitoin is
+                        group by value gap, format of definitoin is
                         'group_column_name=col_name:gap'. if you use comma or
                         colon in expression, those must be escaped with back-
                         slash
   --time_gap COLUMN=definition[,COLUMN=definition...]
-                        group by time gap[seconds] :format of definitoin is
-                        'group_column_name=col_name:format:gap'. if you use
-                        comma or colon in expression, those must be escaped
-                        with back-slash
+                        group by time gap[seconds],format of definitoin is
+                        'group_column_name=col_name:datetime_format:gap'.unit
+                        of 'gap' is second. if you use comma or colon in
+                        expression, those must be escaped with back-slash
+  --calculate_time_diff COLUMN=definition
+                        calculate difference[seconds] of datetime
+                        column,format of definitoin is
+                        'column_name=col_name[:datetime_format[:step]]'.format
+                        is datetime format, default='%Y-%m-%d %H:%M:%S'.
+                        'step' is integer value, default=1. if you use comma
+                        or colon in expression, those must be escaped with
+                        back-slash
+  --calculate_elapsed_time COLUMN:definition
+                        calculate elapsed time[seconds] of datetime
+                        column,format of definitoin is 'column_name=col_name[:
+                        datetime_format[:origin]]'.format is datetime format,
+                        default='%Y-%m-%d %H:%M:%S'. 'origin' is datetime
+                        which format is '%Y-%m-%d %H:%M:%S'.if 'origin' was
+                        omitted, value at first row will be used as origin. if
+                        you use comma or colon in expression, those must be
+                        escaped with back-slash
   --change_timefreq COLUMN=definition[,COLUMN=definition...]
                         change datetime frequeny unit:format of definitoin is 
-                        'new_column_name=old_col_name:format:method:frequency'
-                        . if you use comma or colon in expression, those must
-                        be escaped with back-slash
-  --resample COLUMN[:time_format]:freq:COLUMN[,COLUMN...]
+                        'new_column_name=old_col_name:datetime_format:method:f
+                        requency'. if you use comma or colon in expression,
+                        those must be escaped with back-slash
+  --resample COLUMN[:time_format]:freq:COLUMN_TO_RESAMPLE[,COLUMN...]
                         aggregating values of column resampled by time
                         frequency, using function is defined by '--
                         resample_function'
-  --resample_function {count,sum,min,max,mean,std}
+  --resample_function {nearest,count,sum,min,max,mean,std,linear,quadratic,cubic,spline,barycentric,polynomial,krogh,piecewise_polynomial,pchip,akima,cubicspline}
                         aggregation function for '--resample', default=mean
-  --select COLUMN[:time_format]:start_time,end_time
-                        select time range, ex: 14:00-18:00 for every days.
+  --select_hours COLUMN[:time_format]:start_time,end_time
+                        select hours range, ex: 14:00-18:00 for every days.
                         'start_time' and 'end_time' have the
                         format:%H:%M,%H:%M:%S
+  --select_datetime COLUMN[:time_format]:start_time,end_time
+                        select datetime range, 'start_time' and 'end_time'
+                        have the same format as target column
   --output FILE         path of output csv file, default=stdout
 
 remark:
@@ -1046,19 +1231,24 @@ remark:
 
   If you make group according to gap in seriesed values or datetime, '--gap' or '--time_gap' are available.
   This group is useful for plotting by 'csv_plot_*', printing status by 'csv_status'.
-  For '--time_gap', about format string , see above about '--change_timefreq'
+  For '--time_gap', about time format string , see above about '--change_timefreq'
+  using '--gap', numeric others than date time data are treated.
   For '--gap' and '--time_gap', given gap should be positive.
 
   If you want to use commas and colon in expression of '--change_timefreq' and others, those must be escaped by back-slash. see examples.
 
   processing order:
-    convert into timestamp, add time column, reformat, gap, time gap, change timrefreq, resample, select time range
+    sort datetime, convert into timestamp, add time column, reformat, gap, time gap, time diff, change timrefreq, resample, 
+    select datetime range, select hours range
 
 example:
+
   csv_trimtime.py --get_range_of_time='A:M' test_trimtime.csv
 %inf:csv_uty:get time of range:A:13106.0 mins
   csv_trimtime.py --get_range_of_time='A:M' test_trimtime.csv | sed -E 's/^.*:([0-9.]+) mins//'
 13106.0
+
+  csv_trimtime.py --sort_datetime=date a10.csv
 
   csv_trimtime.py --timestamp="D:A" test_trimtime.csv
   csv_trimtime.py --add_time_column="D:2020-12-01 12\:12\:12:5s" test_trimtime.csv
@@ -1074,12 +1264,8 @@ A,B,C,GA
 2020-11-13 10:00:00,1,19,1
 2020-11-13 10:01:00,2,18,1
 2020-11-13 10:02:00,3,7,1
-2020-11-13 10:13:00,4,6,2
-2020-11-13 10:14:00,5,3,2
-2020-11-13 10:25:00,6,2,3
-2020-11-13 10:26:00,7,1,3
 
-  csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:30s' big_sample_headers.csv |\
+  csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S\:floor\:30s' big_sample_headers.csv |\
                                                               csv_plot_histogram.py --animation_column=D --output=test.html - ABC005
 
   # in following example, column 'D' will be created as column of timestamp, and by those dataframe will be made into group and stacked.
@@ -1090,8 +1276,23 @@ A,B,C,GA
 
   csv_trimtime.py --resample="A:%Y-%m-%d %H\:%M\:%S:2min:B,C" --resample_func=mean test_trimtime.csv
 
-  csv_trimtime.py --select="A:10\:00\:00,11\:00\:00" test_trimtime.csv
-  csv_trimtime.py --select="A:10\:00\:00,1\:00\:00pm" test_trimtime.csv
+  csv_trimtime.py --select_hours="A:10\:00\:00,11\:00\:00" test_trimtime.csv
+  csv_trimtime.py --select_hours="A:10\:00\:00,1\:00\:00pm" test_trimtime.csv
+  csv_trimtime.py --select_datetime="date:%Y-%m-%d:2007-01-01,2007-12-01" a10.csv
+
+  csv_trimtime.py --calculate_time_diff="TD=A:%Y-%m-%d %H\:%M\:%S:1" test_trimtime.csv
+A,B,C,TD
+2020-11-14 10:00:00,1,19,
+2020-11-13 10:00:00,1,19,-86400.0
+2020-11-13 10:01:00,2,18,60.0
+
+  csv_trimtime.py --calculate_elapsed_time="G=date:%Y-%m-%d:2007-08-01 00\:00\:00" a10.csv
+date,value,G
+2007-06-01,20.681002,-5270400.0
+2007-07-01,21.834889999999998,-2678400.0
+2007-08-01,23.93020353,0.0
+2007-09-01,22.93035694,2678400.0
+2007-10-01,23.26333992,5270400.0
 
 
 </pre>
@@ -1403,8 +1604,8 @@ example:
 usage: csv_write_excel.py [-h] [-v] [--columns COLUMN[,COLUMN...]]
                           [--image_column COLUMN]
                           [--image_output_column COLUMN]
-                          [--image_size WIDTH,HEIGHT] [--hyperlink] --output
-                          EXCEL_FILE
+                          [--image_size WIDTH,HEIGHT] [--hyperlink]
+                          [--output EXCEL_FILE]
                           CSV_FILE
 
 write csv to ms-excel file with images
@@ -1435,6 +1636,24 @@ remark:
 
   Using '--hyperlink', a cell will be with a hyperlink attribute for URL with http/https/file protocol or 
   a value of cell that is available as a path of a file.
+
+  you may execute following vba on the excel to set a property of an image object.
+How to automatically change all pictures to move and size with cells in Excel? https://www.extendoffice.com/documents/excel/4923-excel-picture-move-and-size-with-cells-default.html
+</pre>
+##
+<pre>
+Sub MoveAndSizeWithCells()
+    Dim xPic As Picture
+    On Error Resume Next
+    Application.ScreenUpdating = False
+    For Each xPic In ActiveSheet.Pictures
+        xPic.Placement = xlMoveAndSize
+    Next
+    Application.ScreenUpdating = True
+End Sub
+</pre>
+##
+<pre>
 
 example:
   csv_write_excel.py --image_column=file_name --output=images.xlsx images.csv
@@ -1492,7 +1711,7 @@ options:
   -v        : verbose
 
 example:
-  csv_dtype.sh -c 1-100 big_sample_arb.csv | awk '=="binary" {print ../csv_utility/csv_dtype.sh}'
+  csv_dtype.sh -c 1-100 big_sample_arb.csv | awk '=="binary" {print /home/akei/library/csv_tools/csv_utility/csv_dtype.sh}'
   csv_dtype.sh -i -c 1-20 -v big_sample_arb.csv
 
 remark:
@@ -1695,6 +1914,18 @@ options:
 remark:
   as assumption, there is only one header row in csv file.
 
+
+
+</pre>
+## csv_quick_view.sh
+<pre>
+Usage: csv_quick_view.sh [-s word] csv_file
+options:
+  -s word: word to search
+
+remark:
+  see folloing
+  Pretty CSV viewing on the Command Line - Stefaan Lippens inserts content here https://www.stefaanlippens.net/pretty-csv.html
 
 
 </pre>

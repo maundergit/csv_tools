@@ -43,7 +43,7 @@
 | csv_dummy.sh              | make simple dummy record with csv format                                    | 要素の値を行番号／列番号をHex表記した指定する行数／列数のCSVを生成する |
 | csv_function.sh           | replace contents of columns with values that were processed by 'function'.  | シェルスクリプトによる要素値の置き換え出力を行う                       |
 | csv_get_col_index.sh      | to get index of column  or name of column with 1-base                       | CSVの列名または列番号を指定して、列番号または列名を出力する            |
-| csv_head.sh               | command like ‘head’ for csv.                                              | headコマンドのCSV版                                                  |
+| csv_head.sh               | command like ‘head’ for csv.                                              | headコマンドのCSV版                                                    |
 | csv_hist_console.sh       | plot histogram by ascii character.                                          | コンソール画面でヒストグラム表示を行う                                 |
 | csv_join.sh               | join two csv file into one csv file                                         | XSVを用いたCSVファイルの列方向の結合                                   |
 | csv_matrix.sh             | convert matrix data into (x,y,v).                                           | 行列形式のCSVデータを(X,Y,V)形式へ変換する                             |
@@ -68,6 +68,8 @@
 | csv_meltpivot.py          | melting or pivoting csv file                                                | CSVの指定列に対してPivotまたはMeltを行う                               |
 | csv_multiindex_columns.py | handle multiindex columns csv                                               | マルチインデックス形式の列名を持つCSVの取り扱い                        |
 | csv_print_html.py         | print html table made of csv with estimation                                | CSVを最大値／最小値のマーキングなどを行いHTMLとして出力する            |
+| csv_print_html_Oia.py     | print html table made of csv with estimation                                | テキストデータを持つCSVのカラムを見やすくHTMLとして出力する            |
+| csv_print_html_tl.py      | print html table made of csv with estimation                                | 時刻情報とテキストデータを持つCSVの語句の時刻分布をHTMLとして出力する  |
 | csv_query.py              | do query for CSV data                                                       | CSVに対して指定条件による行選択を行う                                  |
 | csv_sample.py             | derive sample records from big csv file                                     | CSVからサンプリングされた行を選択して出力する                          |
 | csv_stack_trime.py        | split one column  that has multiple meaning  into some columns              | CSVの指定列を複数の列に分割する                                        |

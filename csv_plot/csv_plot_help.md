@@ -57,11 +57,12 @@ example:
 usage: csv_plot_bar.py [-h] [-v] [--title TEXT] [--facets column[,column]]
                        [--category column] [--category_orders JSON_STRING]
                        [--barmode {group,overlay,relative}]
-                       [--animation_column column] [--xrange XMIN,XMAX]
+                       [--animation_column column[:datetime_format]]
+                       [--datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                        [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                       [--error_x COLUMN] [--error_y COLUMN] [--output FILE]
-                       [--format {svg,png,jpg,json,html}] [--packed_html]
-                       [--width WIDTH] [--height HEIGHT]
+                       [--noautoscale] [--error_x COLUMN] [--error_y COLUMN]
+                       [--output FILE] [--format {svg,png,jpg,json,html}]
+                       [--packed_html] [--width WIDTH] [--height HEIGHT]
                        CSV_FILE X_COLUMN_OR_Y_COLUMNS
                        [COLUMN[,COLUMN[,COLUMN..]]]
 
@@ -86,12 +87,15 @@ optional arguments:
                         orders of elements in each category, with json format
   --barmode {group,overlay,relative}
                         bar mode, default=relative
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
+  --datetime DATETIME_FORMAT
+                        format of x as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --error_x COLUMN      column name of error x
   --error_y COLUMN      column name of error y
   --output FILE         path of output file
@@ -107,9 +111,14 @@ remark:
 
   only x_or_y_column was given without y_columns, sequence numbers are used as x values that are generated atuomaticaly.
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   csv_plot_bar.py --output=test.html test_bar.csv count
   csv_plot_bar.py --format=html --category=medal --barmode=group test_bar.csv nation count
+  csv_plot_bar.py --output=test_bar_dt.html --category=medal --barmode=group --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt count
   input:
   ,nation,medal,count
   0,South Korea,gold,24
@@ -128,9 +137,11 @@ example:
 <pre>
 usage: csv_plot_box.py [-h] [-v] [--title TEXT] [--facets column[,column]]
                        [--category column] [--category_orders JSON_STRING]
-                       [--animation_column column] [--xrange XMIN,XMAX]
+                       [--animation_column column[:datetime_format]]
+                       [--datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                        [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                       [--type {box,violin}] [--mode {group,overlay}]
+                       [--noautoscale] [--type {box,violin}]
+                       [--mode {group,overlay}]
                        [--points {outliers,suspectedoutliers,all,False}]
                        [--output FILE] [--format {svg,png,jpg,json,html}]
                        [--packed_html] [--width WIDTH] [--height HEIGHT]
@@ -153,12 +164,15 @@ optional arguments:
   --category column     name of column as category
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
+  --datetime DATETIME_FORMAT
+                        format of x as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --type {box,violin}   box or violin
   --mode {group,overlay}
                         box mode or strip mode
@@ -174,13 +188,18 @@ optional arguments:
 
 remark:
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   import plotly.express as px
   df = px.data.tips()
   df.to_csv("test_strip.csv")
 
-  csv_plot_box.py --facets=day --category=sex --format=html test_strip.csv total_bill time  
-  csv_plot_box.py --category=sex --format=html --type=violin test_strip.csv total_bill time
+  csv_plot_box.py --facets=wday --category=type --format=html test_strip.csv total time  
+  csv_plot_box.py --category=type --format=html --type=violin test_strip.csv total time
+  csv_plot_box.py --output=test_box_dt.html --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt
 
 
 </pre>
@@ -193,10 +212,11 @@ usage: csv_plot_heatmap.py [-h] [-v] [--title TEXT] [--nbins_x INT]
                            [--hist_func {count,sum,avg,min,max}]
                            [--color_table {1,2,3,4,5,6,7,8,9,10,11,12}]
                            [--category_orders JSON_STRING]
-                           [--animation_column column] [--xrange XMIN,XMAX]
-                           [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                           [--output FILE] [--format {svg,png,jpg,json,html}]
-                           [--packed_html] [--width WIDTH] [--height HEIGHT]
+                           [--animation_column column[:datetime_format]]
+                           [--xrange XMIN,XMAX] [--yrange YMIN,YMAX] [--log_x]
+                           [--log_y] [--noautoscale] [--output FILE]
+                           [--format {svg,png,jpg,json,html}] [--packed_html]
+                           [--width WIDTH] [--height HEIGHT]
                            CSV_FILE X_COLUMN Y_COLUMN [Z_COLUMN]
 
 plot heatmap chart
@@ -225,12 +245,13 @@ optional arguments:
                         color table for heat map, default=1
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --output FILE         path of output file
   --format {svg,png,jpg,json,html}
                         format of output, default=svg
@@ -238,6 +259,11 @@ optional arguments:
                         this is enable only for --format=html
   --width WIDTH         width of output
   --height HEIGHT       height of output
+
+remark:
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
 example:
   csv_plot_heatmap.py --xrange=0,.5 --yrange=0,.5 --format=html test_plot.csv ABC001 ABC002
@@ -247,16 +273,20 @@ example:
 ## csv_plot_histogram.py
 <pre>
 usage: csv_plot_histogram.py [-h] [-v] [--title TEXT] [--nbins INT]
+                             [--nbin_modes {square-root,sturges,rice,doane,s_and_s,freedman_diaconis}]
                              [--side_hist {rug,box,violin,histogram}]
                              [--facets column[,column]]
                              [--hist_func {count,sum,avg,min,max}]
                              [--category column]
                              [--category_orders JSON_STRING]
-                             [--animation_column column] [--xrange XMIN,XMAX]
+                             [--animation_column column[:datetime_format]]
+                             [--datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                              [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                             [--output FILE]
+                             [--noautoscale] [--output FILE]
                              [--format {svg,png,jpg,json,html}]
                              [--packed_html] [--width WIDTH] [--height HEIGHT]
+                             [--pareto_chart]
+                             [--pareto_sort_mode {count,axis}]
                              CSV_FILE X_COLUMN [Y_COLUMN]
 
 plot histogram chart with counting values
@@ -271,6 +301,9 @@ optional arguments:
   -v, --version         show program's version number and exit
   --title TEXT          title of chart
   --nbins INT           number of bins,default=10
+  --nbin_modes {square-root,sturges,rice,doane,s_and_s,freedman_diaconis}
+                        method to evaluate number of bins. if given, '--nbins'
+                        is ignored.
   --side_hist {rug,box,violin,histogram}
                         side histogram mode
   --facets column[,column]
@@ -281,12 +314,15 @@ optional arguments:
   --category column     name of column as category
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
+  --datetime DATETIME_FORMAT
+                        format of x as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --output FILE         path of output file
   --format {svg,png,jpg,json,html}
                         format of output, default=svg
@@ -294,16 +330,35 @@ optional arguments:
                         this is enable only for --format=html
   --width WIDTH         width of output
   --height HEIGHT       height of output
+  --pareto_chart        pareto chart mode
+  --pareto_sort_mode {count,axis}
+                        sort mode for pareto mode, default=asscending count
 
 remark:
   the column for '--facet' and '--ctegory' should have few uni values.
 
   If '--xrange' was given, valuse in the column was clipped into the range and plotted with bins given by '--nbins'.
 
+  for '--pareto_chart', only followings are available
+      '--xrange', '--yrange', '--nbins', '--output', '--format', '--with', '--height', '--packed_html'
+  '--pareto_sort_mode=axis' may be usefull to estimate threhold.
+
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
+  about '--nbin_mode', see Histogram - Wikipedia https://en.wikipedia.org/wiki/Histogram .
+  NOTE 's_and_s' means Shimazaki and Shinomoto's choice.
+
 example:
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
-  csv_plot_histogram.py --nbins=50  --category="ABC004" --side_hist=rug --log_y --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --side_hist=rug --output=test_plot_hist.html test_plot.csv  "ABC001" "ABC002"
+  csv_plot_histogram.py --nbins=50 --category="ABC004" --side_hist=rug --log_y --xrange=0.4,0.6 --output=test_plot_hist.html test_plot.csv "ABC001" "ABC002"
+  csv_plot_histogram.py --nbin_mode="square-root" --output=test_plot_hist.html test_plot.csv "ABC001" "ABC002"
+
+  csv_plot_histogram.py --output=test.html --pareto_chart --nbins=100 a10.csv value
+  csv_plot_histogram.py --output=test.html --pareto_chart --pareto_sort_mode=axis --nbins=100 a10.csv value
+  csv_plot_histogram.py --output=test_hist_dt.html --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt
 
 
 </pre>
@@ -311,11 +366,12 @@ example:
 <pre>
 usage: csv_plot_line.py [-h] [-v] [--title TEXT] [--facets column[,column]]
                         [--category column] [--category_orders JSON_STRING]
-                        [--animation_column column] [--xrange XMIN,XMAX]
+                        [--animation_column column[:datetime_format]]
+                        [--datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                         [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                        [--error_x COLUMN] [--error_y COLUMN] [--output FILE]
-                        [--format {svg,png,jpg,json,html}] [--packed_html]
-                        [--width WIDTH] [--height HEIGHT]
+                        [--noautoscale] [--error_x COLUMN] [--error_y COLUMN]
+                        [--output FILE] [--format {svg,png,jpg,json,html}]
+                        [--packed_html] [--width WIDTH] [--height HEIGHT]
                         CSV_FILE X_COLUMN_OR_Y_COLUMNS
                         [COLUMN[,COLUMN[,COLUMN..]]]
 
@@ -338,12 +394,15 @@ optional arguments:
   --category column     name of column as category
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
+  --datetime DATETIME_FORMAT
+                        format of x as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --error_x COLUMN      column name of error x
   --error_y COLUMN      column name of error y
   --output FILE         path of output file
@@ -359,9 +418,14 @@ remark:
 
   only x_or_y_column was given without y_columns, sequence numbers are used as x values that are generated atuomaticaly.
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   csv_plot_line.py --facets=COL_0006 --output=test.html big_sample_arb.csv COL_0008,COL_0033,COL_0097
   csv_plot_line.py --facets=COL_0006 --format html big_sample_arb.csv COL_0000 COL_0008,COL_0033,COL_0097
+  csv_plot_line.py --output=test_line_dt.html --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt count
 
 
 </pre>
@@ -369,12 +433,13 @@ example:
 <pre>
 usage: csv_plot_line_3d.py [-h] [-v] [--title TEXT] [--category column]
                            [--category_orders JSON_STRING]
-                           [--animation_column column] [--xrange XMIN,XMAX]
-                           [--yrange YMIN,YMAX] [--zrange ZMIN,ZMAX] [--log_x]
-                           [--log_y] [--log_z] [--error_x COLUMN]
-                           [--error_y COLUMN] [--error_z COLUMN]
-                           [--output FILE] [--format {svg,png,jpg,json,html}]
-                           [--packed_html] [--width WIDTH] [--height HEIGHT]
+                           [--animation_column column[:datetime_format]]
+                           [--xrange XMIN,XMAX] [--yrange YMIN,YMAX]
+                           [--zrange ZMIN,ZMAX] [--log_x] [--log_y] [--log_z]
+                           [--error_x COLUMN] [--error_y COLUMN]
+                           [--error_z COLUMN] [--output FILE]
+                           [--format {svg,png,jpg,json,html}] [--packed_html]
+                           [--width WIDTH] [--height HEIGHT]
                            CSV_FILE X_COLUMN Y_COLUMN Z_COLUMN
 
 plot 3d line chart
@@ -392,7 +457,7 @@ optional arguments:
   --category column     name of column as category
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
@@ -414,6 +479,10 @@ optional arguments:
 remark:
   plotly.express.line_3d  4.11.0 documentation https://plotly.com/python-api-reference/generated/plotly.express.line_3d.html#plotly.express.line_3d
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   csv_plot_line_3d.py --format=html --category=COL_0006 big_sample_arb.csv COL_0008 COL_0033 COL_0097
 
@@ -425,7 +494,7 @@ usage: csv_plot_parallel_coordinates.py [-h] [-v] [--title TEXT] [--discrete]
                                         [--ignore_key]
                                         [--color_table {1,2,3,4,5,6,7,8,9,10,11,12}]
                                         [--xrange XMIN,XMAX]
-                                        [--animation_column column]
+                                        [--animation_column column[:datetime_format]]
                                         [--output FILE]
                                         [--format {svg,png,jpg,json,html}]
                                         [--packed_html] [--width WIDTH]
@@ -448,7 +517,7 @@ optional arguments:
   --color_table {1,2,3,4,5,6,7,8,9,10,11,12}
                         color table for heat map, default=1
   --xrange XMIN,XMAX    range of x
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --output FILE         path of output file
   --format {svg,png,jpg,json,html}
@@ -462,6 +531,11 @@ remark:
   key colmun must have only numeric values.
   all others columns has numeric values.
   if columns has discrete values, then use '--discrete'.
+
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   csv_plot_parallel_coordinates.py --format=html big_sample_arb.csv COL_0097 COL_0008,COL_0033
   csv_plot_parallel_coordinates.py --format=html --discrete big_sample_arb.csv COL_0008 COL_0006,COL_0002,COL_0023
@@ -477,9 +551,9 @@ usage: csv_plot_polar.py [-h] [-v] [--title TEXT] [--category column]
                          [--start_angle START_ANGLE] [--clock]
                          [--type {scatter,line,bar}] [--line_close]
                          [--line_shape {linear,spline}]
-                         [--animation_column column] [--output FILE]
-                         [--format {svg,png,jpg,json,html}] [--packed_html]
-                         [--width WIDTH] [--height HEIGHT]
+                         [--animation_column column[:datetime_format]]
+                         [--output FILE] [--format {svg,png,jpg,json,html}]
+                         [--packed_html] [--width WIDTH] [--height HEIGHT]
                          CSV_FILE R_COLUMN THETA_COLUMN [WEIGHT_COLUMN]
 
 plot polar chart
@@ -512,7 +586,7 @@ optional arguments:
   --line_close          line closing mode, available for only line chart
   --line_shape {linear,spline}
                         line shape, available for only line chart
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --output FILE         path of output file
   --format {svg,png,jpg,json,html}
@@ -523,6 +597,10 @@ optional arguments:
   --height HEIGHT       height of output
 
 remark:
+
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
 example:
   import plotly.express as px
@@ -599,12 +677,16 @@ usage: csv_plot_scatter.py [-h] [-v] [--title TEXT]
                            [--side_hist {rug,box,violin,histogram}]
                            [--facets column[,column]] [--category column]
                            [--category_orders JSON_STRING]
-                           [--size_column column] [--animation_column column]
-                           [--trendline {ols,lowess}] [--xrange XMIN,XMAX]
+                           [--size_column column]
+                           [--animation_column column[:datetime_format]]
+                           [--trendline {ols,lowess}]
+                           [--x_datetime DATETIME_FORMAT]
+                           [--y_datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                            [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                           [--error_x COLUMN] [--error_y COLUMN]
-                           [--output FILE] [--format {svg,png,jpg,json,html}]
-                           [--packed_html] [--width WIDTH] [--height HEIGHT]
+                           [--noautoscale] [--error_x COLUMN]
+                           [--error_y COLUMN] [--output FILE]
+                           [--format {svg,png,jpg,json,html}] [--packed_html]
+                           [--width WIDTH] [--height HEIGHT]
                            CSV_FILE X_COLUMN Y_COLUMN
 
 plot scatter chart
@@ -627,14 +709,19 @@ optional arguments:
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
   --size_column column  name of column as size of symbol
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --trendline {ols,lowess}
                         trendline mode
+  --x_datetime DATETIME_FORMAT
+                        format of x as datetime
+  --y_datetime DATETIME_FORMAT
+                        format of y as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --error_x COLUMN      column name of error x
   --error_y COLUMN      column name of error y
   --output FILE         path of output file
@@ -653,7 +740,12 @@ remark:
      lowess=a Locally Weighted Scatterplot Smoothing line will be drawn for each discrete-color/symbol group.
      see plotly.express.scatter  4.10.0 documentation https://plotly.com/python-api-reference/generated/plotly.express.scatter.html
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
   statsmodels
+
 example:
   csv_plot_scatter.py --format=html --category=COL_0006  --size_column=COL_0097 --side_hist=rug big_sample_arb.csv COL_0008 COL_0003 
 
@@ -664,11 +756,11 @@ example:
 usage: csv_plot_scatter_3d.py [-h] [-v] [--title TEXT] [--category column]
                               [--category_orders JSON_STRING]
                               [--size_column column]
-                              [--animation_column column] [--xrange XMIN,XMAX]
-                              [--yrange YMIN,YMAX] [--zrange ZMIN,ZMAX]
-                              [--log_x] [--log_y] [--log_z] [--error_x COLUMN]
-                              [--error_y COLUMN] [--error_z COLUMN]
-                              [--output FILE]
+                              [--animation_column column[:datetime_format]]
+                              [--xrange XMIN,XMAX] [--yrange YMIN,YMAX]
+                              [--zrange ZMIN,ZMAX] [--log_x] [--log_y]
+                              [--log_z] [--error_x COLUMN] [--error_y COLUMN]
+                              [--error_z COLUMN] [--output FILE]
                               [--format {svg,png,jpg,json,html}]
                               [--packed_html] [--width WIDTH]
                               [--height HEIGHT]
@@ -690,7 +782,7 @@ optional arguments:
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
   --size_column column  name of column as size of symbol
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
@@ -711,6 +803,10 @@ optional arguments:
 
 remark:
   plotly.express.scatter_3d  4.11.0 documentation https://plotly.com/python-api-reference/generated/plotly.express.scatter_3d.html
+
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
 example:
   csv_plot_scatter_3d.py --format=html --category=COL_0006 big_sample_arb.csv COL_0008 COL_0033 COL_0097
@@ -761,11 +857,12 @@ example:
 <pre>
 usage: csv_plot_strip.py [-h] [-v] [--title TEXT] [--facets column[,column]]
                          [--category column] [--category_orders JSON_STRING]
-                         [--animation_column column] [--xrange XMIN,XMAX]
+                         [--animation_column column[:datetime_format]]
+                         [--datetime DATETIME_FORMAT] [--xrange XMIN,XMAX]
                          [--yrange YMIN,YMAX] [--log_x] [--log_y]
-                         [--mode {group,overlay}] [--output FILE]
-                         [--format {svg,png,jpg,json,html}] [--packed_html]
-                         [--width WIDTH] [--height HEIGHT]
+                         [--noautoscale] [--mode {group,overlay}]
+                         [--output FILE] [--format {svg,png,jpg,json,html}]
+                         [--packed_html] [--width WIDTH] [--height HEIGHT]
                          CSV_FILE X_COLUMN [Y_COLUMN]
 
 plot strip chart
@@ -785,12 +882,15 @@ optional arguments:
   --category column     name of column as category
   --category_orders JSON_STRING
                         orders of elements in each category, with json format
-  --animation_column column
+  --animation_column column[:datetime_format]
                         name of column as aimation
+  --datetime DATETIME_FORMAT
+                        format of x as datetime
   --xrange XMIN,XMAX    range of x
   --yrange YMIN,YMAX    range of y
   --log_x               log-scaled x axis
   --log_y               log-scaled y axis
+  --noautoscale         not autoscale x or y for facets
   --mode {group,overlay}
                         strip mode
   --output FILE         path of output file
@@ -806,13 +906,19 @@ remark:
   When there is scant data a histogram or box plot just is not informative. 
   This is a great use for a one dimensional scatter plot, dot plot, or a what is called a strip chart in R.
 
+  for animation column, colon ":" must be escaped by "". ex: "Animation\:Column".
+  if datetime column was used as column for animation, format of datetime should be defined.
+  see datetime  Basic date and time types  Python 3.9.4 documentation https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+
 example:
   import plotly.express as px
   df = px.data.tips()
   df.to_csv("test_strip.csv")
 
-  csv_plot_strip.py --facets=day --category=sex --format=html test_strip.csv total_bill time
+  csv_plot_strip.py --facets=wday --category=type --format=html test_strip.csv total time
+  csv_plot_strip.py --output=test_strip_dt.html --datetime="%Y-%m-%d %H:%M:%S" test_bar.csv dt count
 </pre>
+
 ## csv_plot_csvtk.sh
 <pre>
 plot histogram by graphical character.
@@ -833,5 +939,20 @@ options:
 example:
   csv_plot_csvtk.sh -s big_sample_arb.csv COL_0008 COL_0033 COL_0006
   csv_plot_csvtk.sh -t test_plot.csv COL_0000
+
+
+
+</pre>
+## csv_plot_subplot_line.sh
+<pre>
+plot multi-columns in csv file as subplot of line chart
+Usage: csv_plot_subplot_line.sh [-o output_html] [-t tile] [-p options_of_csv_plot_line] csv_file key_column plot_colun[,plot_column...]
+options:
+ -o output_html: default={prefix of input file}.html
+ -t title : title of chart
+ -p options: options of csv_plot_line.py by string 
+
+example:
+  csv_plot_subplot_line.sh -t "a b c" -p "--log_y" test_plot.csv ABC000 ABC001,ABC002,ABC003
 
 </pre>
