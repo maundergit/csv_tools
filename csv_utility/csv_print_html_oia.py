@@ -312,7 +312,7 @@ def html_epiloge(datatable=False):
 
 
 def part_color(pcolors, text):
-    hit_words = []
+    hit_words = {}
     for pc in pcolors:
         cvs = re.split(r"(?<!\\):", pc)
         if len(cvs) < 2:
@@ -331,11 +331,13 @@ def part_color(pcolors, text):
         text_0 = text
         text = re.sub(w0, sp, text)
         if text_0 != text:
-            hit_words.append(w_0)
+            hit_words[w_0] = text_0.count(w_0)
     return text, hit_words
 
 
 def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
+    output_df = df.copy()
+    output_df["hit_words"] = ""
     html_str = '\n<table class="sticky_table display nowrap" style="width:100%;">\n'
     html_str += '<thead ondblclick="show_word_search();">\n'
     n_oia = len(oia_columns)
@@ -360,20 +362,23 @@ def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
             v = "&nbsp;" if v == "" else v
             html_str += f'<td nowrap=1 rowspan="{n_oia_h}">{v}</td>\n'
         if not check_empty:
+            hit_words = {}
             for ic, c in enumerate(oia_columns):
                 v = html.escape(str(row[c]))
                 if pcolors is not None and len(pcolors) > 0:
                     v, hw = part_color(pcolors, v)
+                    hits_words = hit_words.update(hw)
                 v = "&nbsp;" if v == "" else v
                 html_str += (f'<td width="{space_width}"></td>' * ic) + f'<td colspan="{4-ic}">{v}</td>\n'
                 if ic < len(oia_columns) - 1:
                     html_str += f'</tr>\n<tr {tr_sty}>\n'
+            output_df.at[ir, "hit_words"] = output_df.at[ir, "hit_words"] + str(hit_words)
         else:
             html_str += '<td></td>' * n_oia
         html_str += "</tr>\n"
     html_str += "</tbody>\n</table>\n"
 
-    return html_str
+    return html_str, output_df
 
 
 if __name__ == "__main__":
@@ -404,6 +409,9 @@ if __name__ == "__main__":
 
     if csv_file == "-":
         csv_file = sys.stdin
+        output_csv_file = ""
+    else:
+        output_csv_file = Path(csv_file).stem + "_output.csv"
 
     if output_file != sys.stdout:
         output_file = open(output_file, "w")
@@ -412,7 +420,7 @@ if __name__ == "__main__":
 
     html_str = html_prologe_oia(width=None, word_colors=pcolors_s, search_on_html=search_on_html, title=title)
     html_str += "<div id='tablecontainer'>"
-    table_str = make_table(csv_df, columns, oia_columns, pcolors)
+    table_str, output_df = make_table(csv_df, columns, oia_columns, pcolors)
     html_str += table_str
     html_str += "</div>"
     html_str += html_epiloge()
@@ -426,3 +434,6 @@ if __name__ == "__main__":
             sys.exit(1)
 
     print(html_str, file=output_file)
+    if pcolors is not None:
+        output_df.to_csv(output_csv_file, index=False)
+        print(f"%inf:csv_print_html: {output_csv_file} was created.", file=sys.stderr)
