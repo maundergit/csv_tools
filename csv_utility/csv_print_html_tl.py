@@ -226,14 +226,14 @@ def make_event(row,
         "minute": str(dt_c.minute)
     }
     evnt["display_date"] = dt_c.strftime("%Y-%m-%d %H:%M:%S")
-    evnt_desc, hit_words = make_table(row, columns, oia_columns, pcolors)
+    evnt_desc, hit_words_dic = make_table(row, columns, oia_columns, pcolors)
     if headline_column is not None:
         headline = row[headline_column]
     else:
         headline = f"Event{dt_c}"
     evnt["text"] = {"headline": headline, "text": evnt_desc}
     if group_by_part_color:
-        hit_words = sorted(list(set(hit_words)))
+        hit_words = sorted(list(set(hit_words_dic.keys())))
         evnt["group"] = ",".join(hit_words) if len(hit_words) > 0 else ""
         row["group"] = evnt["group"]
     elif group_column is not None:
@@ -263,12 +263,12 @@ def make_table(row, columns, oia_columns, pcolors):
     html_str += f'<th nowrap="1"">項目</th><th>内容</th>\n'
     html_str += '</thead>\n<tbody>\n'
 
-    hit_words = []
+    hit_words = {}
     for c in columns:
         v = html.escape(str(row[c]))
         if pcolors is not None and len(pcolors) > 0:
             v, hw = part_color(pcolors, v)
-            hit_words.extend(hw)
+            hit_words.update(hw)
         v = "&nbsp;" if v == "" else v
         html_str += f'<tr><td nowrap="1">{c}</td><td>{v}</td></tr>\n'
     for ic, c in enumerate(oia_columns):
@@ -276,7 +276,7 @@ def make_table(row, columns, oia_columns, pcolors):
         v = html.escape(str(v0))
         if pcolors is not None and len(pcolors) > 0:
             v, hw = part_color(pcolors, v)
-            hit_words.extend(hw)
+            hit_words.update(hw)
         v = "&nbsp;" if v == "" else v
         html_str += f'<tr><td nowrap="1">{c}</td><td>{v}</td></tr>\n'
     html_str += "</tbody>\n</table>\n"

@@ -584,6 +584,7 @@ def html_epiloge(datatable=False):
 
 
 def part_color(pcolors, text):
+    hit_words = {}
     for pc in pcolors:
         cvs = re.split(r"(?<!\\):", pc)
         if len(cvs) < 2:
@@ -593,14 +594,18 @@ def part_color(pcolors, text):
         w = cvs[0]
         w = re.sub(r"\\([,:])", r"\1", w)
         w = w.strip("'\"")
+        w_0 = w
         w = html.escape(str(w))
         w0 = "(" + w + ")"
         c = cvs[1]
         # fmt = f"color:{c};font-weight:bold;background:#EEEEEE;box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.4);border-radius: 4px;padding-left:0.5em;padding-right:0.5em;"
         fmt = f"color:{c};"
         sp = f'<span class="word_view_span" style="{fmt}">\\1</span>'
+        text_0 = text
         text = re.sub(w0, sp, text)
-    return text
+        if text_0 != text:
+            hit_words[w_0] = text_0.count(w_0)
+    return text, hit_words
 
 
 def set_max_column_width(df_sty, max_width="200px"):
@@ -707,7 +712,7 @@ if __name__ == "__main__":
     csv_df = csv_df.applymap(lambda x: html.escape(str(x)))
 
     if pcolors is not None and len(pcolors) > 0:
-        csv_df = csv_df.applymap(lambda x: part_color(pcolors, str(x)))
+        csv_df = csv_df.applymap(lambda x: part_color(pcolors, str(x))[0])
     # print(csv_df.describe())
 
     # csv_df.reset_index(inplace=True)
