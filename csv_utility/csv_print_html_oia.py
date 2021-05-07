@@ -409,7 +409,7 @@ if __name__ == "__main__":
 
     if csv_file == "-":
         csv_file = sys.stdin
-        output_csv_file = ""
+        output_csv_file = "output_oia.csv"
     else:
         output_csv_file = Path(csv_file).stem + "_output.csv"
 

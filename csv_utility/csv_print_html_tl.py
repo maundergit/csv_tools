@@ -50,9 +50,9 @@ remark:
   see "Loading Files Locally" section in Timeline https://timeline.knightlab.com/docs/instantiate-a-timeline.html .
 
   For '--part_color', is you want to use comma(,) an colon(:) in word, then those must be escaped by "\".
-  Using '--group_by_part_color', words in '--part_color' are used as group of event.
+  Using '--group_by_part_color', words in '--part_color' are used as group of event/milestone in tileline/gantt chart.
   when '--part_color' is used, also gantt chart for plantUML will be created. 
-  then value of column('--headingline_column') will be used as task name.
+  then value of column('--headingline_column') will be used as name of milestone.
 
   about '--media':
   TimelineJS3 has function to show media(image,vide,etc) for each event.
@@ -94,15 +94,9 @@ IDX,B,DT,C,O,I,A,image,title_of_image
                             metavar="FORMAT",
                             default="%Y-%m-%d %H:%M:%S")
 
-    arg_parser.add_argument("--group_column",
-                            dest="GCOLUMN",
-                            help="names of column to make group",
-                            type=str,
-                            metavar='COLUMN',
-                            default=None)
     arg_parser.add_argument("--headline_column",
                             dest="HCOLUMN",
-                            help="names of column for short text",
+                            help="names of column for short text as name of event/milestone",
                             type=str,
                             metavar='COLUMN',
                             default=None)
@@ -119,6 +113,13 @@ IDX,B,DT,C,O,I,A,image,title_of_image
                             help="part color for string, color code is one in css codes.",
                             type=str,
                             metavar='STRING:COLOR[,STRING:COLOR...]',
+                            default=None)
+
+    arg_parser.add_argument("--group_column",
+                            dest="GCOLUMN",
+                            help="names of column to make group",
+                            type=str,
+                            metavar='COLUMN',
                             default=None)
     arg_parser.add_argument("--group_by_part_color",
                             dest="GSEARCH",
@@ -357,7 +358,6 @@ def make_html(json_str, word_colors, timeline_local=True):
       "zoom_sequence":[0.02,0.04,0.1,0.2,0.5,1, 2, 3, 5, 8, 13, 21, 34, 55, 89],
       "timenav_position":"top",
       "start_at_slide":0,
-      "timenav_height":250,
       }}
       var json_data=JSON.parse('{json_str}');
       timeline = new TL.Timeline('timeline-embed', json_data, tl_opts);
@@ -370,8 +370,11 @@ def make_html(json_str, word_colors, timeline_local=True):
     return text
 
 
+#      "timenav_height":250,
+
+
 def make_gantt(df, datetime_column, group_column="group", headline_column=None, title=None):
-    groups = df[group_column].unique()
+    groups = sorted(list(df[group_column].unique()))
 
     if headline_column is not None:
         df[headline_column] = df[headline_column].apply(lambda x: re.sub(r"\n", "", x))
@@ -461,7 +464,7 @@ if __name__ == "__main__":
 
     output_file_gantt = None
     if output_file_csv is None:
-        output_file_csv = str(Path(csv_file).stem) + ".html"
+        output_file_csv = str(Path(csv_file).stem) + "_tl.html"
     if output_file_gantt is None:
         output_file_gantt = str(Path(output_file_csv).stem) + ".pu"
 
