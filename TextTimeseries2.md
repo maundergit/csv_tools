@@ -45,7 +45,7 @@ rectには、適当な背景色が設定されているものとして、時間�
 
 ```svg
 <g>
-  <rect>
+  <rect/>
   <text><tspan>語句</tspan></text>
 </g>
 ```
@@ -92,7 +92,7 @@ Inkscapeでは、四角を描画し、テキストを配置して、グループ
 コマンドを実行するとHTMLファイルの生成と同時に、カレントディレクトリに`fig`ディレクトリを作成し、各イベントに対する図面を作成する。
 なお期間日数のデフォルトは14日としている。
 
-以下は、図面=`wagahaiwa_nekodearu_module.svg`、期間日数=`7`、マップファイル=`wagahaiwa_nekodearu_map.txt`として指定指定する例である。
+以下は、図面=`wagahaiwa_nekodearu_module.svg`、期間日数=`7`、マップファイル=`wagahaiwa_nekodearu_map.txt`として指定する例である。
 
 ```shell
 csv_print_html_tl.py --datetime_format='%Y-%m-%d' --columns=date --part_color='吾輩,人間,我慢,書斎'\
