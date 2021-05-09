@@ -135,6 +135,11 @@ HTMLの表示では、上部にタイムラインが表示され、タイムラ�
 ![wagahaiha_nekodearu](examples/wagahaiwa_nekodearu.png "wagahaiha_nekodearu Timeline")  
 [タイムライン表示](examples/wagahaiwa_nekodearu.html "wagahaiha_nekodearu Timeline")
 
+
+タイムライン表示に図面表示機能を付加したものについては 「[[実験的機能]テキスト文書の時系列データ分析(2)](TextTimeseries2.md)」参照のこと
+
+
+
 <!-- ------------------ -->
 <!-- Local Variables:   -->
 <!-- mode: markdown     -->
