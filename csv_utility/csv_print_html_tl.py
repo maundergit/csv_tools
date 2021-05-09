@@ -20,10 +20,15 @@ import html
 import json
 
 import calendar
-import minify_html
+
+import datetime
+from pathlib import Path
+# import xml.etree.ElementTree as ET
+from lxml import etree
 
 import numpy as np
 import pandas as pd
+import minify_html
 
 PIL_PKG = True
 try:
@@ -59,6 +64,11 @@ remark:
   using '--media' option, this function is enable: 
   path of media file is given by this option. optional column is column that has title string of each media file.
 
+  '--words_map' was path of map file to replace words to group on timeline.
+  format of the file is following: 'group: word[,word..]' at each row.
+
+  about '--module_figure', see https://github.com/maundergit/csv_tools/blob/master/TextTimeseries2.md.
+
   aboutn TimelineJS3 see following:
   GitHub - NUKnightLab/TimelineJS3: TimelineJS v3: A Storytelling Timeline built in JavaScript. http://timeline.knightlab.com https://github.com/NUKnightLab/TimelineJS3
 
@@ -79,6 +89,13 @@ IDX,B,DT,C,O,I,A,image,title_of_image
  --output=test.html --group_by_part_color --headline_column=B --title="Title\\ndescription" test3.csv DT O I A
   csv_print_html_tl.py --columns=IDX,B,C --part_color='pen:red,action2:blue,observation3:black'\
  --output=test.html --group_by_part_color --headline_column=B --media=image:title_of_image --title="Title\ndescription" test3.csv DT O I A
+
+  csv_print_html_tl.py --datetime_format='%Y-%m-%d' --columns=date --part_color='吾輩,人間,我慢,書斎'\
+ --group_by_part_color --output=test.html --module_figure=wagahaiwa_nekodearu.svg wagahaiwa_nekodearu.csv date content
+  csv_print_html_tl.py --datetime_format='%Y-%m-%d' --columns=date --part_color='吾輩,人間,我慢,書斎'\
+ --group_by_part_color --output wagahaiwa_nekodearu_2.html --module_figure "wagahaiwa_nekodearu_module.svg:7" --words_map=wagahaiwa_nekodearu_map.txt  wagahaiwa_nekodearu.csv date content
+
+
 
 '''))
     #  --part_color='インドネシア:red,米国:green,潜"水艦:blue,海軍\S*参謀総?長:black'
@@ -128,6 +145,19 @@ IDX,B,DT,C,O,I,A,image,title_of_image
                             default=False)
 
     arg_parser.add_argument("--media", dest="MEDIA", help="columns for medias", type=str, metavar="COLUMN[:COLUMN]", default=None)
+    arg_parser.add_argument("--module_figure",
+                            dest="MFIGURE",
+                            help="path of module figure, period, map file. if defined, '--media' is ignored.",
+                            type=str,
+                            metavar="SVG_FILE[:INT]",
+                            default=None)
+
+    arg_parser.add_argument("--words_map",
+                            dest="WMAP",
+                            help="path of file to replace group on timeline",
+                            type=str,
+                            metavar='COLUMN',
+                            default=None)
 
     arg_parser.add_argument("--cdn", dest="CDN", help="using CDN(cdn.knightlab.com), default=local", action="store_true", default=False)
 
@@ -154,18 +184,33 @@ def make_json(df,
               title=None,
               group_by_part_color=False,
               media_column=None,
-              media_caption=None):
+              media_caption=None,
+              module_figure_file=None,
+              module_figure_time_window=None,
+              words_map_file=None):
 
     j_data = {}
     if title is not None:
         cvs = re.split(r"\\n", title)
-        if len(cvs) > 1 and len(cvs[1].strip()) > 0:
+        if len(cvs) > 1 and len(cvs[1].rstrip()) > 0:
             title_0 = cvs[0]
             title_1 = cvs[1]
         else:
             title_0 = cvs[0]
             title_1 = ""
         j_data["title"] = {"text": {"headline": title_0, "text": title_1}}
+
+    module_figure = None
+    module_figure_output_dir = "fig"
+    if module_figure_file is not None:
+        module_figure = module_state_figure(module_figure_file,
+                                            module_figure_output_dir,
+                                            map_file=words_map_file,
+                                            duration=module_figure_time_window)
+    words_map_n2w = None
+    words_map_w2n = None
+    if words_map_file is not None:
+        words_map_n2w, words_map_w2n = read_words_map_file(words_map_file)
 
     events = []
     output_df = pd.DataFrame()
@@ -182,7 +227,10 @@ def make_json(df,
                          headline_column=headline_column,
                          group_by_part_color=group_by_part_color,
                          media_column=media_column,
-                         media_caption=media_caption)
+                         media_caption=media_caption,
+                         module_figure=module_figure,
+                         words_map=words_map_w2n)
+
         events.append(evn)
         output_df = output_df.append(row, ignore_index=True)
     j_data["events"] = events
@@ -208,6 +256,22 @@ def get_title_from_exif(image_file):
     return None
 
 
+def __make_group(group, words_map_n2w):
+    if words_map_n2w is None:
+        return group
+    result = set()
+    cvs = re.split(r"\s*(?<!\\),\s*", group)
+    for v in cvs:
+        if v in words_map_n2w:
+            v = words_map_n2w[v]
+            result |= set(v)
+        else:
+            result.add(v)
+    result = sorted(list(result))
+
+    return ",".join(result)
+
+
 def make_event(row,
                dt_c,
                columns,
@@ -217,7 +281,9 @@ def make_event(row,
                headline_column=None,
                group_by_part_color=False,
                media_column=None,
-               media_caption=None):
+               media_caption=None,
+               module_figure=None,
+               words_map=None):
     evnt = {}
     evnt["start_date"] = {
         "year": str(dt_c.year),
@@ -236,11 +302,19 @@ def make_event(row,
     if group_by_part_color:
         hit_words = sorted(list(set(hit_words_dic.keys())))
         evnt["group"] = ",".join(hit_words) if len(hit_words) > 0 else ""
+        evnt["group"] = __make_group(evnt["group"], words_map)
         row["group"] = evnt["group"]
     elif group_column is not None:
+        row[group_column] = __make_group(row[group_column], words_map)
         evnt["group"] = row[group_column]
 
-    if media_column is not None:
+    if module_figure is not None:
+        module_figure.edit_module_figure(hit_words_dic.keys(), dt_c)
+        tag = dt_c.strftime("%Y-%m-%dT%H%M%S")
+        media_file = module_figure.write(tag)
+        media_title = Path(media_file).stem
+        evnt["media"] = {"url": f"file:{media_file}", "caption": media_title, "title": media_title}
+    elif media_column is not None:
         media_file = row[media_column]
         if media_file is not np.nan and len(media_file) > 0:
             if media_caption is not None and row[media_caption] is not np.nan and len(row[media_caption]) > 0:
@@ -416,6 +490,216 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
     return result
 
 
+def read_words_map_file(map_file):
+    words_map_n2w = {}
+    words_map_w2n = {}
+    if not Path(map_file).exists():
+        mes = f"??error:csv_print_html_tl:{map_file} was not found"
+        print(mes, file=sys.stderr)
+        raise Exception(mes)
+    print(f"%inf:csv_print_html_tl:words_map '{map_file}' is used.", file=sys.stderr)
+    with open(map_file, "r") as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            cvs = re.split(r"\s*(?<!\\):\s*", line, maxsplit=2)
+            if len(cvs) < 2:
+                mes = f"??error:module_state_figure:invalid structure in map file: {map_file}:{line}"
+                print(mes, sys.stderr)
+                raise Exception(mes)
+            words_map_n2w[cvs[0]] = cvs[1]
+
+    for k, v in words_map_n2w.items():
+        cvs = re.split(r"\s*(?<!\\),\s*", v)
+        for v2 in cvs:
+            if v2 not in words_map_w2n:
+                words_map_w2n[v2] = []
+            words_map_w2n[v2] = sorted(list(set(words_map_w2n[v2]) | set([k])))
+
+    # print(words_map_w2n)
+    print(f"%inf:csv_print_html_tl:words_map:\n{words_map_w2n}", file=sys.stderr)
+    return words_map_n2w, words_map_w2n
+
+
+class module_state_figure():
+    def __init__(self, svg_file, output_dir, duration=3600 * 24 * 14, datetime_format="%Y-%m-%d %H:%M:%S", map_file=None):
+        self.__svg_file = svg_file
+        self.__output_dir = output_dir
+        self.__svg_root = self.read_module_figure()
+        self.__duration = duration
+        self.__datetime_format = datetime_format
+        self.__name2words = {}
+        self.__words2names = {}
+        if map_file is not None:
+            self.read_map_file(map_file)
+
+        self.__stroke_width = 0.25
+
+    def read_module_figure(self):
+        if not Path(self.__svg_file).exists():
+            mes = f"??error:module_state_figure:{self.__svg_file} was not found"
+            print(mes, file=sys.stderr)
+            raise Exception(mes)
+        self.__tree = etree.parse(self.__svg_file)
+        svg_root = self.__tree.getroot()
+
+        return svg_root
+
+    def read_map_file(self, map_file):
+        if not Path(map_file).exists():
+            mes = f"??error:module_state_figure:{map_file} was not found"
+            print(mes, file=sys.stderr)
+            raise Exception(mes)
+        with open(map_file, "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line.startswith("#"):
+                    continue
+                cvs = re.split(r"\s*(?<!\\):\s*", line, maxsplit=2)
+                if len(cvs) < 2:
+                    mes = f"??error:module_state_figure:invalid structure in map file: {map_file}:{line}"
+                    print(mes, sys.stderr)
+                    raise Exception(mes)
+                self.__name2words[cvs[0]] = cvs[1]
+
+        for k, v in self.__name2words.items():
+            cvs = re.split(r"\s*(?<!\\),\s*", v)
+            for v2 in cvs:
+                if v2 not in self.__words2names:
+                    self.__words2names[v2] = []
+                # self.__words2names[v2].append(k)
+                self.__words2names[v2] = sorted(list(set(self.__words2names[v2]) | set([k])))
+
+        # print(self.__words2names)
+
+    def edit_module_figure(self, id_names0, current_dt):
+
+        if len(self.__words2names) > 0:
+            id_names = []
+            for id_name in id_names0:
+                if id_name in self.__words2names:
+                    id_names.extend(self.__words2names[id_name])
+                    id_names.append(id_name)
+                else:
+                    id_names.append(id_name)
+        else:
+            id_names = id_names0
+
+        self.set_opacity0_in_svg(current_dt)
+        for id_name in id_names:
+            self.set_opacity1_in_svg(id_name, current_dt)
+        svg_string = self.get_string()
+
+        return svg_string
+
+    def __get_style(self, elm):
+        e_style = elm.get("style")
+        if e_style is None:
+            return {}
+        e_style_dic = {
+            re.split(r"(?<!\\):", v, maxsplit=2)[0]: re.split(r"(?<!\\):", v, maxsplit=2)[1]
+            for v in re.split(r"\s*(?<!\\);\s*", e_style) if len(v) > 0
+        }
+        return e_style_dic
+
+    def __set_opacity(self, elm, o_code, w_code, current_dt, force=False):
+        e_style_dic = self.__get_style(elm)
+
+        if ("fill-opacity" in e_style_dic and float(e_style_dic["fill-opacity"]) <= 0.0) and not force:
+            return
+        e_style_dic["fill-opacity"] = f"{o_code}"
+        e_style_dic["stroke-width"] = f"{w_code}"
+        e_style = ";".join([f"{k}:{v}" for k, v in e_style_dic.items()])
+        elm.set("style", e_style)
+        if force:
+            elm.set("time_stamp", current_dt.strftime(self.__datetime_format))
+
+    def __calculate_stroke_width(self, dt, s_width, duration, reverse=False):
+        if reverse:
+            # w_code_f = max(1.0, 1 - duration / dt) / 2 * s_width if dt < duration else s_width
+            w_code_f = max(self.__stroke_width, s_width - dt / duration * (s_width - self.__stroke_width)) if dt < duration else s_width
+            # print(s_width, w_code_f, dt, duration)
+        else:
+            # w_code_f = min(10.0, 1 + duration / dt) / 2 * s_width if dt < duration else s_width
+            w_code_f = min(self.__stroke_width * 60, s_width + duration / dt * self.__stroke_width) if dt < duration else s_width
+        w_code_f = min(60 * self.__stroke_width, w_code_f)
+        return w_code_f
+
+    def __calculate_opacity(self, dt, duration):
+        c_code_f = 1.0 - dt / duration if dt < duration else 0.0
+        return c_code_f
+
+    def set_opacity0_in_svg(self, current_dt):
+        default_width = self.__stroke_width
+        xml_ns = {"svg": "http://www.w3.org/2000/svg"}
+        for elm in self.__svg_root.xpath(f"//*/svg:rect", namespaces=xml_ns):
+            tstmp = elm.get("time_stamp")
+            if tstmp is None:
+                o_code = "0.0"
+                w_code = str(default_width)
+            else:
+                dt = (current_dt - datetime.datetime.strptime(tstmp, self.__datetime_format)).total_seconds()
+                f_v = self.__calculate_opacity(dt, self.__duration)
+                # print(current_dt, tstmp, dt, f_v)
+                o_code = "{:0.6f}".format(f_v)
+                # print(elm.get("id"), o_code, dt, self.__duration)
+                e_style = self.__get_style(elm)
+                w_code_f = float(e_style["stroke-width"])
+                if w_code_f > default_width:
+                    w_code = str(min(w_code_f, self.__calculate_stroke_width(dt, w_code_f, self.__duration, reverse=True)))
+                else:
+                    w_code = default_width
+            self.__set_opacity(elm, o_code, w_code, current_dt)
+
+    def set_opacity1_in_svg(self, id_name, current_dt):
+        # xmlstarlet el  ltest.svg
+        # xmlstarlet ed --update '//*/svg:rect[@id="rect1"]/@style' -v 'fill:#00ff00;stroke:#000000;stroke-width:0.264583;fill-opacity:1' test.svg
+        default_width = self.__stroke_width
+        xml_ns = {"svg": "http://www.w3.org/2000/svg"}
+        for elm in self.__svg_root.xpath(f"//*/svg:tspan[contains(text(),'{id_name}')]/ancestor::svg:g/svg:rect", namespaces=xml_ns):
+            o_code = "1"
+            tstmp = elm.get("time_stamp")
+            # print("1:", elm.get('id'))
+            if tstmp is not None:
+                e_style = self.__get_style(elm)
+                w_code_f = float(e_style["stroke-width"])
+                dt = (current_dt - datetime.datetime.strptime(tstmp, self.__datetime_format)).total_seconds()
+                # print(id_name, elm.get('id'), current_dt, tstmp, dt)
+                if dt != 0:
+                    w_code = str(self.__calculate_stroke_width(dt, w_code_f, self.__duration))
+                else:
+                    w_code = f"{w_code_f}"
+            else:
+                w_code = default_width
+            self.__set_opacity(elm, o_code, w_code, current_dt, force=True)
+
+    def get_string(self):
+        svg_string = etree.tostring(self.__svg_root, encoding="utf8", method="xml")
+        svg_string = svg_string.decode('utf8')
+        return svg_string
+
+    def write(self, tag_of_file):
+        if not Path(self.__output_dir).exists():
+            Path(self.__output_dir).mkdir(exist_ok=True, parents=True)
+        fname = Path.joinpath(Path(self.__output_dir), Path(self.__svg_file).stem + f"_{tag_of_file}.svg")
+        with open(fname, "w") as f:
+            print(self.get_string(), file=f)
+
+        return fname
+
+
+# svg_file = "test.svg"
+# output_dir = "fig"
+# id_names = ["吾輩"]
+# current_dt = datetime.datetime.now()
+
+# module_figure = module_state_figure(svg_file, output_dir)
+# svg_string = module_figure.edit_module_figure(id_names, current_dt)
+# current_dt = datetime.datetime.strptime("2021-05-12 10:00:00", "%Y-%m-%d %H:%M:%S")
+# svg_string = module_figure.edit_module_figure(id_names, current_dt)
+# fname = module_figure.write("11")
+
 if __name__ == "__main__":
     args = init()
     csv_file = args.csv_file
@@ -446,6 +730,18 @@ if __name__ == "__main__":
             media_file_column = cvs[0]
             media_caption_column = media_file_column
 
+    module_figure_s = args.MFIGURE
+    module_figure_file = None
+    module_figure_time_window = 14 * 3600 * 24
+    if module_figure_s is not None:
+        cvs = re.split(r":", module_figure_s)
+        module_figure_file = cvs[0]
+        if len(cvs) >= 2 and cvs[1].isdigit():
+            module_figure_time_window = int(cvs[1]) * 3600 * 24
+        elif len(cvs) > 2 and not cvs[1].isdigit():
+            print(f"??error:csv_print_html_tl:invalid format of '--module_figure': {module_figure_s}", file=sys.stderr)
+            sys.exit(1)
+
     pcolors_s = args.PCOLORS
     group_by_part_color = args.GSEARCH
     if group_by_part_color and pcolors_s is None:
@@ -457,6 +753,8 @@ if __name__ == "__main__":
             file=sys.stderr)
 
     html_minify = args.MINIFY
+
+    words_map_file = args.WMAP
 
     if output_file_csv is None and csv_file == "-":
         print("??error:csv_print_html_tl:path of output html must e defined.", file=sys.stderr)
@@ -497,7 +795,10 @@ if __name__ == "__main__":
                                     title=title,
                                     group_by_part_color=group_by_part_color,
                                     media_column=media_file_column,
-                                    media_caption=media_caption_column)
+                                    media_caption=media_caption_column,
+                                    module_figure_file=module_figure_file,
+                                    module_figure_time_window=module_figure_time_window,
+                                    words_map_file=words_map_file)
     html_str = make_html(json_str, pcolors_s, timeline_local=timeline_local)
 
     if html_minify:
