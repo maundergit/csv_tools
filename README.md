@@ -124,12 +124,17 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 ## 例用例
 
 - [テキスト文書の時系列データ分析](TextTimeseries.md)
+- [[実験的機能]テキスト文書の時系列データ分析(2)](TextTimeseries2.md)  
+  `csv_print_html_tl.py`の`--module_figure`機能の説明
 
 ## 主として利用しているライブラリなど
 
 * [Plotly](https://plotly.com/python/) - CSVデータの可視化のためにチャート生成に使用
 * [pandas](https://pandas.pydata.org/) - CSVデータのPythonへの読み込み及び各種の処理に使用
 * [csvkit](https://csvkit.readthedocs.io/en/latest/),[xsv](https://github.com/BurntSushi/xsv) - シェルスクリプトにおけるCSVの処理に利用
+* [TimelineJS3: TimelineJS v3: A Storytelling Timeline built in JavaScript\. http://timeline\.knightlab\.com](https://github.com/NUKnightLab/TimelineJS3)  
+  テキスト文書の時系列データ分析に利用しているタイムライン表示ライブラリ
+  
 
 
 ## 作者
@@ -169,5 +174,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [DataTables \| Table plug\-in for jQuery](https://datatables.net/)  
   HTML上のTable表示用スタイル
 - [GNU Bash manual \- GNU Project \- Free Software Foundation](https://www.gnu.org/software/bash/manual/)  
+- [GitHub \- NUKnightLab/TimelineJS3: TimelineJS v3: A Storytelling Timeline built in JavaScript\. http://timeline\.knightlab\.com](https://github.com/NUKnightLab/TimelineJS3)  
+  タイムライン表示ライブラリ
   
 
