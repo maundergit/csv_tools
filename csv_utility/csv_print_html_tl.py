@@ -313,7 +313,7 @@ def make_event(row,
         tag = dt_c.strftime("%Y-%m-%dT%H%M%S")
         media_file = module_figure.write(tag)
         media_title = Path(media_file).stem
-        evnt["media"] = {"url": f"file:{media_file}", "caption": media_title, "title": media_title}
+        evnt["media"] = {"url": f"{media_file}", "caption": media_title, "title": media_title}
     elif media_column is not None:
         media_file = row[media_column]
         if media_file is not np.nan and len(media_file) > 0:
@@ -328,7 +328,7 @@ def make_event(row,
                         media_title_s = media_file
                 else:
                     media_title_s = media_file
-            evnt["media"] = {"url": f"file:{media_file}", "caption": media_title_s, "title": media_title_s}
+            evnt["media"] = {"url": f"{media_file}", "caption": media_title_s, "title": media_title_s}
     return evnt
 
 
@@ -448,6 +448,7 @@ def make_html(json_str, word_colors, timeline_local=True):
 
 
 def make_gantt(df, datetime_column, group_column="group", headline_column=None, title=None):
+    separator_font_size = 18
     groups = sorted(list(df[group_column].unique()))
 
     if headline_column is not None:
@@ -469,7 +470,7 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
     for grp in groups:
         if len(grp) == 0:
             continue
-        result_s.append(f"-- {grp} --")
+        result_s.append(f"-- <size:{separator_font_size}><b>{grp}</b></size> --")
         ds = df.loc[df[group_column] == grp, datetime_column]
         for idx, dt in ds.items():
             dt_s = dt.strftime("%Y-%m-%d")
@@ -501,7 +502,7 @@ def read_words_map_file(map_file):
     with open(map_file, "r") as f:
         for line in f.readlines():
             line = line.strip()
-            if line.startswith("#"):
+            if line.startswith("#") or len(line) == 0:
                 continue
             cvs = re.split(r"\s*(?<!\\):\s*", line, maxsplit=2)
             if len(cvs) < 2:
@@ -554,7 +555,7 @@ class module_state_figure():
         with open(map_file, "r") as f:
             for line in f.readlines():
                 line = line.strip()
-                if line.startswith("#"):
+                if line.startswith("#") or len(line) == 0:
                     continue
                 cvs = re.split(r"\s*(?<!\\):\s*", line, maxsplit=2)
                 if len(cvs) < 2:
@@ -618,12 +619,14 @@ class module_state_figure():
     def __calculate_stroke_width(self, dt, s_width, duration, reverse=False):
         if reverse:
             # w_code_f = max(1.0, 1 - duration / dt) / 2 * s_width if dt < duration else s_width
-            w_code_f = max(self.__stroke_width, s_width - dt / duration * (s_width - self.__stroke_width)) if dt < duration else s_width
+            w_code_f = max(self.__stroke_width, s_width - dt / duration *
+                           (s_width - self.__stroke_width)) if dt < duration else self.__stroke_width
             # print(s_width, w_code_f, dt, duration)
         else:
             # w_code_f = min(10.0, 1 + duration / dt) / 2 * s_width if dt < duration else s_width
-            w_code_f = min(self.__stroke_width * 60, s_width + duration / dt * self.__stroke_width) if dt < duration else s_width
-        w_code_f = min(60 * self.__stroke_width, w_code_f)
+            w_code_f = min(self.__stroke_width * 40, s_width +
+                           duration / dt * self.__stroke_width) if dt < duration else self.__stroke_width
+        w_code_f = min(40 * self.__stroke_width, w_code_f)
         return w_code_f
 
     def __calculate_opacity(self, dt, duration):
@@ -784,6 +787,8 @@ if __name__ == "__main__":
 
     csv_df = pd.read_csv(csv_file, dtype='object')
     csv_df[datetime_column] = pd.to_datetime(csv_df[datetime_column], format=datetime_format)
+    csv_df.sort_values(datetime_column, inplace=True)
+    csv_df.reset_index(inplace=True)
 
     json_str, output_df = make_json(csv_df,
                                     datetime_column,
