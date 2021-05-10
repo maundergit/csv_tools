@@ -707,7 +707,7 @@ if __name__ == "__main__":
     args = init()
     csv_file = args.csv_file
     title = args.TITLE
-    output_file_csv = args.OUTPUT
+    output_file_html = args.OUTPUT
     datetime_format = args.DTFORMAT
     datetime_column = args.datetime_column
     oia_columns = args.oia_columns
@@ -759,15 +759,17 @@ if __name__ == "__main__":
 
     words_map_file = args.WMAP
 
-    if output_file_csv is None and csv_file == "-":
+    if output_file_html is None and csv_file == "-":
         print("??error:csv_print_html_tl:path of output html must e defined.", file=sys.stderr)
         sys.exit(1)
 
     output_file_gantt = None
-    if output_file_csv is None:
-        output_file_csv = str(Path(csv_file).stem) + "_tl.html"
+    if output_file_html is None:
+        output_file_html = str(Path(csv_file).stem) + "_tl.html"
     if output_file_gantt is None:
-        output_file_gantt = str(Path(output_file_csv).stem) + ".pu"
+        output_file_gantt = str(Path(output_file_html).stem) + ".pu"
+
+    output_file_csv = str(Path(output_file_html).stem) + ".csv"
 
     pcolors = None
     if pcolors_s is not None:
@@ -783,7 +785,7 @@ if __name__ == "__main__":
     if csv_file == "-":
         csv_file = sys.stdin
 
-    output_file_csv_f = open(output_file_csv, "w")
+    output_file_html_f = open(output_file_html, "w")
 
     csv_df = pd.read_csv(csv_file, dtype='object')
     csv_df[datetime_column] = pd.to_datetime(csv_df[datetime_column], format=datetime_format)
@@ -814,12 +816,15 @@ if __name__ == "__main__":
             print(mes, file=sys.stderr)
             sys.exit(1)
 
-    print(html_str, file=output_file_csv_f)
+    print(html_str, file=output_file_html_f)
 
-    print(f"%inf:csv_print_html_tl:{output_file_csv} was created.", file=sys.stderr)
+    print(f"%inf:csv_print_html_tl:{output_file_html} was created.", file=sys.stderr)
 
     if pcolors is not None:
         gantt_str = make_gantt(output_df, datetime_column, headline_column=headline_column, title=title)
         with open(output_file_gantt, "w") as f:
             f.write(gantt_str)
-    print(f"%inf:csv_print_html_tl:{output_file_gantt} was created.", file=sys.stderr)
+        print(f"%inf:csv_print_html_tl:{output_file_gantt} was created.", file=sys.stderr)
+
+    output_df.to_csv(output_file_csv)
+    print(f"%inf:csv_print_html_tl:{output_file_csv} was created.", file=sys.stderr)
