@@ -42,6 +42,8 @@ from csv_print_html_oia import part_color
 
 VERSION = 1.0
 
+TL_HANDLER_JS = "tl_handler.js"
+
 
 def init():
     arg_parser = argparse.ArgumentParser(description="print html table made of csv with estimation",
@@ -218,7 +220,8 @@ def make_json(df,
         dt_c = row[datetime_column]
         if dt_c is pd.NaT:
             continue
-        evn = make_event(row,
+        evn = make_event(ir,
+                         row,
                          dt_c,
                          columns,
                          oia_columns,
@@ -272,7 +275,8 @@ def __make_group(group, words_map_n2w):
     return ",".join(result)
 
 
-def make_event(row,
+def make_event(ir,
+               row,
                dt_c,
                columns,
                oia_columns,
@@ -293,7 +297,7 @@ def make_event(row,
         "minute": str(dt_c.minute)
     }
     evnt["display_date"] = dt_c.strftime("%Y-%m-%d %H:%M:%S")
-    evnt_desc, hit_words_dic = make_table(row, columns, oia_columns, pcolors)
+    evnt_desc, hit_words_dic = make_table(ir, row, columns, oia_columns, pcolors)
     if headline_column is not None:
         headline = row[headline_column]
     else:
@@ -332,20 +336,24 @@ def make_event(row,
     return evnt
 
 
-def make_table(row, columns, oia_columns, pcolors):
+def make_table(ir, row, columns, oia_columns, pcolors):
     html_str = '<table class="desc_oia">\n'
     html_str += '<thead>\n'
     html_str += f'<th nowrap="1"">項目</th><th>内容</th>\n'
     html_str += '</thead>\n<tbody>\n'
 
     hit_words = {}
+    td_columns = {"nrec": ir}
     for c in columns:
         v = html.escape(str(row[c]))
+        td_columns[c] = v
         if pcolors is not None and len(pcolors) > 0:
             v, hw = part_color(pcolors, v)
             hit_words.update(hw)
         v = "&nbsp;" if v == "" else v
-        html_str += f'<tr><td nowrap="1">{c}</td><td>{v}</td></tr>\n'
+        # html_str += f'<tr><td nowrap="1">{c}</td><td>{v}</td></tr>\n'
+        html_str += f'<tr><td nowrap="1">{c}</td><td ondblclick="tl_dblclick_from_td_0()">{v}</td></tr>\n'
+    html_str = re.sub(r"tl_dblclick_from_td_0\(\)", f"tl_dblclick_from_td_0({json.dumps(td_columns)})", html_str)
     for ic, c in enumerate(oia_columns):
         v0 = str(row[c])
         v = html.escape(str(v0))
@@ -419,6 +427,14 @@ def make_html(json_str, word_colors, timeline_local=True):
          background-color: #ffffff;
       }}
     </style>
+   <script type="text/javascript" src="{TL_HANDLER_JS}"></script>
+   <script type="text/javascript">
+        function tl_dblclick_from_td_0(val_dic){{
+            if(typeof(tl_dblclick_from_td) == "function"){{
+                tl_dblclick_from_td(val_dic);
+            }}
+        }}
+   </script>
   </head>
   <body>
     <div id='timeline-embed' style="width: 100%;">
@@ -467,6 +483,7 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
     # 表示で幅を持たすためのダミータスク
     result_s.append(f"[ ] starts {dt_0.year}-{dt_0.month}-01 and ends {dt_1.year}-{dt_1.month}-{dt_1.day}")
     result_s.append("printscale weekly")
+    result_tags_s = ["idx,id_name"]
     for grp in groups:
         if len(grp) == 0:
             continue
@@ -478,17 +495,19 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
                 id_name = df.loc[df.index == idx, headline_column].iat[0]
                 idn = len([v for v in id_names if v == id_name])
                 id_names.append(id_name)
-                if idn > 0:  # 既にタスク名として資料済みの場合は連番付与
+                if idn > 0:  # 既にタスク名として使用済みの場合は連番付与
                     id_name = f"{id_name}_{idn}"
                 elif id_name in hc_id_names:  # 二個以上あるタスク名は連番として0を付与
                     id_name = f"{id_name}_0"
             else:
                 id_name = f"id_{idx}"
             result_s.append(f"[{id_name}] happens {dt_s}")
+            result_tags_s.append(f"{idx},{id_name}")
 
     result_s.append("@endgantt")
     result = "\n".join(result_s)
-    return result
+    result_tags = "\n".join(result_tags_s)
+    return result, result_tags
 
 
 def read_words_map_file(map_file):
@@ -521,6 +540,31 @@ def read_words_map_file(map_file):
     # print(words_map_w2n)
     print(f"%inf:csv_print_html_tl:words_map:\n{words_map_w2n}", file=sys.stderr)
     return words_map_n2w, words_map_w2n
+
+
+def make_tl_handler_template(columns, output_js):
+    if Path(output_js).exists():
+        print(f"#warn:csv_print_html_tl: {output_js} already exists.", file=sys.stderr)
+        return
+    js_str = f"""
+// -*- coding:utf-8 mode:javascript -*-
+// File: tl_handler.js
+
+function tl_dblclick_from_td(val_dic){{
+   // index: 'nrec' and {columns}    
+   // enter codes
+   console.log(val_dic);
+   // let html_url="test.html";
+   // let nrec= val_dic["nrec"]; // record number in csv
+   // let id_in_html="rid_"+nrec;
+   // let url=html_url+"#"+id_in_html;
+   // window.open(url,"__blank");
+}}
+"""
+    with open(output_js, "w") as f:
+        print(js_str, file=f)
+
+    print(f"%inf:csv_print_html_tl: {output_js} was created.", file=sys.stderr)
 
 
 class module_state_figure():
@@ -704,6 +748,8 @@ class module_state_figure():
 # fname = module_figure.write("11")
 
 if __name__ == "__main__":
+    output_js = TL_HANDLER_JS
+
     args = init()
     csv_file = args.csv_file
     title = args.TITLE
@@ -768,6 +814,7 @@ if __name__ == "__main__":
         output_file_html = str(Path(csv_file).stem) + "_tl.html"
     if output_file_gantt is None:
         output_file_gantt = str(Path(output_file_html).stem) + ".pu"
+        output_file_gantt_tags = str(Path(output_file_html).stem) + "_gantt_tags.csv"
 
     output_file_csv = str(Path(output_file_html).stem) + ".csv"
 
@@ -790,7 +837,7 @@ if __name__ == "__main__":
     csv_df = pd.read_csv(csv_file, dtype='object')
     csv_df[datetime_column] = pd.to_datetime(csv_df[datetime_column], format=datetime_format)
     csv_df.sort_values(datetime_column, inplace=True)
-    csv_df.reset_index(inplace=True)
+    # csv_df.reset_index(inplace=True)
 
     json_str, output_df = make_json(csv_df,
                                     datetime_column,
@@ -821,10 +868,14 @@ if __name__ == "__main__":
     print(f"%inf:csv_print_html_tl:{output_file_html} was created.", file=sys.stderr)
 
     if pcolors is not None:
-        gantt_str = make_gantt(output_df, datetime_column, headline_column=headline_column, title=title)
+        gantt_str, tags_table = make_gantt(output_df, datetime_column, headline_column=headline_column, title=title)
         with open(output_file_gantt, "w") as f:
             f.write(gantt_str)
-        print(f"%inf:csv_print_html_tl:{output_file_gantt} was created.", file=sys.stderr)
+        with open(output_file_gantt_tags, "w") as f:
+            f.write(tags_table)
+        print(f"%inf:csv_print_html_tl:{output_file_gantt} and {output_file_gantt_tags} was created.", file=sys.stderr)
 
     output_df.to_csv(output_file_csv)
     print(f"%inf:csv_print_html_tl:{output_file_csv} was created.", file=sys.stderr)
+
+    # make_tl_handler_template(columns, output_js)
