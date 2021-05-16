@@ -19,10 +19,13 @@ import re
 import html
 
 import minify_html
+import json
 
 import pandas as pd
 
 VERSION = 1.0
+
+OIA_HANDLER_JS = "oia_handler.js"
 
 
 def init():
@@ -127,6 +130,10 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         top: -14px;
         background-color: #e0ffff;
       }}
+      td.dblclicable:hover {{
+         font-weight:bold;
+         font-size:110%;
+      }}
 
       table {{ 
          {}
@@ -192,7 +199,66 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
     word_colors = re.sub(r"\"", "&quot;", word_colors)
     if search_on_html:
         text += """
+   <script type="text/javascript" src="{}"></script>
    <script type="text/javascript">
+        function oia_dblclick_from_td_0(val_dic){{
+            if(typeof(oia_dblclick_from_td) == "function"){{
+                oia_dblclick_from_td(val_dic);
+            }} else {{
+                alert("リンク先が設定されていません");
+            }}
+        }}
+   </script>
+   <script type="text/javascript">
+        window.onload=function(){{
+            if( window.location.hash.length > 0){{
+                window.scroll(0,window.scrollY-32);
+            }}
+            if( window.location.search.length > 0){{
+                let search_string=decodeURI(window.location.search.substring(1));
+                window.find(search_string,false,false,true,false,true);
+            }}
+        }}
+        function show_nrec_record(nrec,onoff){{
+            let tr_objs= document.evaluate("/html//tr[@nrec=\\""+nrec+"\\"]",document,null,XPathResult.ANY_TYPE, null);
+            let tr_node= tr_objs.iterateNext();
+            while(tr_node){{
+                if( onoff ){{
+                    tr_node.style.display="";
+                }} else {{
+                    tr_node.style.display="none";
+                }}
+                tr_node= tr_objs.iterateNext();
+            }}
+        }}
+        function show_nohits_record(obj){{
+            if( obj.checked){{
+                onoff=true;
+            }} else {{
+                onoff=false;
+            }}
+            let xp_results_0= document.evaluate("/html//td[@hits_status=\\"1\\"]",document,null,XPathResult.ANY_TYPE, null);
+            let node= xp_results_0.iterateNext();
+            let nrec_hits=[];
+            while( node){{
+                let nrec= node.getAttribute("nrec");
+                nrec_hits.push(nrec);
+                show_nrec_record(nrec,true);
+                node= xp_results_0.iterateNext();
+            }}
+            show_nrec_record(onoff);
+            let xp_results= document.evaluate("/html//td[@hits_status=\\"0\\"]",document,null,XPathResult.ANY_TYPE, null);
+            node= xp_results.iterateNext();
+            while( node){{
+                let nrec= node.getAttribute("nrec");
+                if( nrec_hits.indexOf(nrec) != -1){{
+                    node= xp_results.iterateNext();
+                    continue;
+                }}
+                show_nrec_record(nrec, onoff);
+                node= xp_results.iterateNext();
+            }}
+        }}
         function word_color(word,color_code){{
             var nodes= document.getElementsByTagName("td");
             let count=0;
@@ -203,6 +269,9 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                 let re= new RegExp('(?<!<[^>]*)('+wre+')','gi');
                 nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
                 count_0= (nodes[i].innerHTML.match(re) ||[]).length;
+                if( count_0 > 0){{
+                    nodes[i].setAttribute("hits_status","1");
+                }}
                 count= count+ count_0;
             }}
             return count;
@@ -214,6 +283,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                 let re = new RegExp(span_head+' style="color:[^\"]+">([^<]+?)</span>','gi');
                 while( nodes[i].innerHTML.indexOf(span_head) != -1){{
                     nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                    nodes[i].setAttribute("hits_status","0");
                 }}
             }}
         }}
@@ -255,6 +325,8 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                     }}
                 }}
             );
+            let sh_obj= document.getElementById("showhide_hits");
+            show_nohits_record(sh_obj);
             let swr= document.getElementById('search_word_result');
             swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
         }}
@@ -273,6 +345,8 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
 	<legend>語句色付け定義</legend>
 	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
+	<input type="checkbox" id="showhide_hits" name="showhide_hits" checked onchange="show_nohits_record(this)"/>
+        <label for="showhide_hist" style="font-size:0.5em;">全レコード表示</label><br/>
         <span style="font-size:0.5em;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句には正規表現を利用可能<br>
         語句だけ指定した場合は、赤色が指定されたものとして処理される。
@@ -283,7 +357,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         <span style="font-size:small;" id="search_word_result"></span>
       </fieldset>
     </form>
-""".format(word_colors)
+""".format(OIA_HANDLER_JS, word_colors)
     else:
         text += f'<input value="{word_colors}" style="display:none" />\n'
 
@@ -337,7 +411,7 @@ def part_color(pcolors, text):
 
 def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
     output_df = df.copy()
-    output_df["hit_words"] = ""
+    output_df["hits_words"] = ""
     html_str = '\n<table class="sticky_table display nowrap" style="width:100%;">\n'
     html_str += '<thead ondblclick="show_word_search();">\n'
     n_oia = len(oia_columns)
@@ -352,27 +426,32 @@ def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
             tr_sty = 'style="background-color:#eeffee;"'
         else:
             tr_sty = ""
-        html_str += f"<tr {tr_sty}>\n"
+        html_str += f"<tr {tr_sty} nrec=\"{ir}\" id=\"rid_{ir}\">\n"
         check_empty = all([v == "" for v in row[oia_columns]])
         n_oia_h = 1 if check_empty else n_oia
+        td_columns = {"nrec": ir}
         for c in columns:
             v = html.escape(str(row[c]))
+            td_columns[c] = v
             if pcolors is not None and len(pcolors) > 0:
                 v, hw = part_color(pcolors, v)
             v = "&nbsp;" if v == "" else v
-            html_str += f'<td nowrap=1 rowspan="{n_oia_h}">{v}</td>\n'
+            html_str += f"<td nowrap=1 rowspan='{n_oia_h}' ondblclick='oia_dblclick_from_td_0()' class='dblclicable'>{v}</td>\n"
+        html_str = re.sub(r"oia_dblclick_from_td_0\(\)", f"oia_dblclick_from_td_0({json.dumps(td_columns)})", html_str)
         if not check_empty:
-            hit_words = {}
+            hits_words = {}
             for ic, c in enumerate(oia_columns):
                 v = html.escape(str(row[c]))
                 if pcolors is not None and len(pcolors) > 0:
                     v, hw = part_color(pcolors, v)
-                    hits_words = hit_words.update(hw)
+                    hits_words.update(hw)
                 v = "&nbsp;" if v == "" else v
-                html_str += (f'<td width="{space_width}"></td>' * ic) + f'<td colspan="{4-ic}">{v}</td>\n'
+                hits_status = 1 if len(hits_words) > 0 else 0
+                html_str += (f'<td width="{space_width}"></td>' *
+                             ic) + f'<td colspan="{4-ic}" nrec="{ir}" hits_status="{hits_status}">{v}</td>\n'
                 if ic < len(oia_columns) - 1:
-                    html_str += f'</tr>\n<tr {tr_sty}>\n'
-            output_df.at[ir, "hit_words"] = output_df.at[ir, "hit_words"] + str(hit_words)
+                    html_str += f'</tr>\n<tr {tr_sty} nrec={ir}>\n'
+            output_df.at[ir, "hits_words"] = output_df.at[ir, "hits_words"] + str(hits_words)
         else:
             html_str += '<td></td>' * n_oia
         html_str += "</tr>\n"
@@ -381,7 +460,35 @@ def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
     return html_str, output_df
 
 
+def make_oia_handler_template(columns, output_js):
+    if Path(output_js).exists():
+        print(f"#warn:csv_print_html_oia: {output_js} already exists.", file=sys.stderr)
+        return
+    js_str = f"""
+// -*- coding:utf-8 mode:javascript -*-
+// File: oia_handler.js
+
+function oia_dblclick_from_td(val_dic){{
+   // index: 'nrec' and {columns}    
+   // enter codes
+   console.log(val_dic);
+   alert("{output_js}を編集してください。");
+   // let html_url="test.html";
+   // let nrec= val_dic["nrec"]; // record number in csv
+   // let id_in_html="rid_"+nrec;
+   // let url=html_url+"#"+id_in_html;
+   // window.open(url,"__blank");
+}}
+"""
+    with open(output_js, "w") as f:
+        print(js_str, file=f)
+
+    print(f"%inf:csv_print_html_oia: {output_js} was created.", file=sys.stderr)
+
+
 if __name__ == "__main__":
+    output_js = OIA_HANDLER_JS
+
     args = init()
     csv_file = args.csv_file
     output_file = args.OUTPUT
@@ -437,3 +544,5 @@ if __name__ == "__main__":
     if pcolors is not None:
         output_df.to_csv(output_csv_file, index=False)
         print(f"%inf:csv_print_html: {output_csv_file} was created.", file=sys.stderr)
+
+    make_oia_handler_template(columns, output_js)
