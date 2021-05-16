@@ -23,6 +23,8 @@ import zipfile
 
 import re
 import html
+from lxml import etree
+from io import StringIO
 
 import minify_html
 
@@ -466,6 +468,55 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
     if search_on_html:
         text += """
    <script type="text/javascript">
+        window.onload=function(){{
+            if( window.location.hash.length > 0){{
+                window.scroll(0,window.scrollY-32);
+            }}
+            if( window.location.search.length > 0){{
+                let search_string=decodeURI(window.location.search.substring(1));
+                window.find(search_string,false,false,true,false,true);
+            }}
+        }}
+        function show_nrec_record(nrec,onoff){{
+            let tr_objs= document.evaluate("/html//tr[@nrec=\\""+nrec+"\\"]",document,null,XPathResult.ANY_TYPE, null);
+            let tr_node= tr_objs.iterateNext();
+            while(tr_node){{
+                if( onoff ){{
+                    tr_node.style.display="";
+                }} else {{
+                    tr_node.style.display="none";
+                }}
+                tr_node= tr_objs.iterateNext();
+            }}
+        }}
+        function show_nohits_record(obj){{
+            if( obj.checked){{
+                onoff=true;
+            }} else {{
+                onoff=false;
+            }}
+            let xp_results_0= document.evaluate("/html//td[@hits_status=\\"1\\"]",document,null,XPathResult.ANY_TYPE, null);
+            let node= xp_results_0.iterateNext();
+            let nrec_hits=[];
+            while( node){{
+                let nrec= node.getAttribute("nrec");
+                nrec_hits.push(nrec);
+                show_nrec_record(nrec,true);
+                node= xp_results_0.iterateNext();
+            }}
+            show_nrec_record(onoff);
+            let xp_results= document.evaluate("/html//td[@hits_status=\\"0\\"]",document,null,XPathResult.ANY_TYPE, null);
+            node= xp_results.iterateNext();
+            while( node){{
+                let nrec= node.getAttribute("nrec");
+                if( nrec_hits.indexOf(nrec) != -1){{
+                    node= xp_results.iterateNext();
+                    continue;
+                }}
+                show_nrec_record(nrec, onoff);
+                node= xp_results.iterateNext();
+            }}
+        }}
         function word_color(word,color_code){{
             var nodes= document.getElementsByTagName("td");
             let count=0;
@@ -475,7 +526,11 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                 wre= wre.replace(/>/g, '&gt;');
                 let re= new RegExp('(?<!<[^>]*)('+wre+')','gi');
                 nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
-                count= count+ (nodes[i].innerHTML.match(re) ||[]).length;
+                count_0= (nodes[i].innerHTML.match(re) ||[]).length;
+                if( count_0 > 0){{
+                    nodes[i].setAttribute("hits_status","1");
+                }}
+                count= count+ count_0;
             }}
             return count;
         }}
@@ -486,6 +541,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                 let re = new RegExp(span_head+' style="color:[^\"]+">([^<]+?)</span>','gi');
                 while( nodes[i].innerHTML.indexOf(span_head) != -1){{
                     nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                    nodes[i].setAttribute("hits_status","0");
                 }}
             }}
         }}
@@ -507,7 +563,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                     var w="";
                     var c="";
                     if( cvs.length < 2){{
-                        // alert("??error:word_view:invalid definition:"+val);
+                        // alert("??error:word_view:invalid definition: '"+val+"'");
                         w= cvs[0];
                         c="red";
                     }} else {{
@@ -523,10 +579,12 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                     try{{
                         word_counts[String(w)]=word_color(w,c);
                     }} catch(e){{
-                        alert("??error:word_view:invalid definition:"+val+":"+e);
+                        alert("??error:word_view:invalid definition: '"+val+"' :"+e);
                     }}
                 }}
             );
+            let sh_obj= document.getElementById("showhide_hits");
+            show_nohits_record(sh_obj);
             let swr= document.getElementById('search_word_result');
             swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
         }}
@@ -545,6 +603,8 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
 	<legend>語句色付け定義</legend>
 	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="{}"><br/>
+	<input type="checkbox" id="showhide_hits" name="showhide_hits" checked onchange="show_nohits_record(this)"/>
+        <label for="showhide_hist" style="font-size:0.5em;">全レコード表示</label><br/>
         <span style="font-size:0.5em;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句には正規表現を利用可能<br>
         語句だけ指定した場合は、赤色が指定されたものとして処理される。
@@ -627,6 +687,25 @@ def set_column_width(column_widths, df_sty):
             sys.exit(1)
         df_sty.set_properties(subset=[c], **{'width': w})
     return df_sty
+
+
+def set_rid_in_html(html_str):
+    html_parser = etree.HTMLParser()
+    tree = etree.parse(StringIO(html_str), html_parser)
+    html_root = tree.getroot()
+    idx = 0
+    for elm in html_root.xpath(f'//*/table[@class="sticky_table display nowrap"]/tbody/tr'):
+        elm.set("id", f"rid_{idx}")
+        elm.set("nrec", f"{idx}")
+        for elm_c in elm.xpath("./td"):
+            elm_c.set("nrec", f"{idx}")
+            elm_c.set("hits_status", "0")
+        idx += 1
+    for elm in html_root.xpath(f'//*/span[@class="word_view_span"]/ancestor::td'):
+        elm.set("hits_status", "1")
+    html_str_r = etree.tostring(html_root, encoding="utf8", method="html")
+    html_str_r = html_str_r.decode('utf8')
+    return html_str_r
 
 
 if __name__ == "__main__":
@@ -773,6 +852,7 @@ if __name__ == "__main__":
     html_str += html_epiloge(datatable=datatable_mode)
 
     html_str = re.sub(r"<thead", '<thead ondblclick="show_word_search();"', html_str)
+    html_str = set_rid_in_html(html_str)
 
     if html_minify:
         try:
