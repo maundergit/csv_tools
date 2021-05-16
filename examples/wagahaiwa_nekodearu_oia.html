@@ -1,0 +1,1630 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+  <!-- made by csv_print_html_oia.py -->
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta http-equiv="Expires" content="0">
+
+    <style type="text/css">
+      /* */
+      body {
+        background: -webkit-linear-gradient(left, #25c481, #25b7c4);
+        background: linear-gradient(to right, #25c481, #25b7c4);
+      }
+      h2.title {
+        text-align:center;
+        margin-bottom: 0pt;
+      }
+      form.word_search {
+        position: fixed;
+        top: 1.5em;
+        visibility:hidden;
+        z-index: 100;
+      }
+      span.word_view_span {
+        font-weight:bold;
+        background:#EEEEEE;
+        box-shadow: 0.0625em 0.0625em 0.0625em 0.0625em rgba(0,0,0,0.4);
+        border-radius: 0.25em;
+        padding-left:0.2em;
+        padding-right:0.2em;
+	margin-right:0.2em;
+      }
+      fieldset {
+        border: 2px solid #ccc;
+        border-radius: 5px;
+        padding: 25px;
+        margin-top: 20px;
+        background-color: #e0ffff;
+        box-shadow: 5px 5px 5px rgba(0,0,0,0.2);
+      }
+      legend {
+        border:  1px solid #ccc;
+        border-bottom: 0;
+        border-radius: 5px 5px 0 0;
+        padding: 8px 18px 0;
+        position:relative;
+        top: -14px;
+        background-color: #e0ffff;
+      }
+
+      table { 
+         margin-left: auto;margin-right: auto;
+         box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+      }
+      table caption {
+         font-size:large; font-weight: bold;
+      }
+      th {
+          /* background-color: #6495ed; */
+         background-color: #009879;
+	 padding:6px;
+      }
+      thead tr th {
+         border-bottom: solid 1px;
+         color: #ffffff;
+      }
+      td {
+         padding:6pt; 
+      }
+      /* Table CSS: Creating beautiful HTML tables with CSS - DEV Community https://dev.to/dcodeyt/creating-beautiful-html-tables-with-css-428l */
+      tbody tr {
+         border-bottom: 1px solid #dddddd;
+         background-color: #ffffff;
+      }
+      tbody tr:last-of-type {
+         border-bottom: 2px solid #009879;
+      }
+      /*  CSSのposition: stickyでテーブルのヘッダー行・列を固定する - Qiita https://qiita.com/orangain/items/6268b6528ab33b27f8f2 */
+      table.sticky_table thead th {
+         position: -webkit-sticky;
+         position: sticky;
+         top: 0;
+         z-index: 1;
+      }
+      table.sticky_table th:first-child {
+         position: -webkit-sticky;
+         position: sticky;
+         left: 0;
+      }
+      table.sticky_table thead th:first-child {
+         z-index: 2;
+      }
+    </style>
+
+  </head>
+  <body>
+
+   <script type="text/javascript" src="oia_handler.js"></script>
+   <script type="text/javascript">
+        function oia_dblclick_from_td_0(val_dic){
+            if(typeof(oia_dblclick_from_td) == "function"){
+                oia_dblclick_from_td(val_dic);
+            }
+        }
+   </script>
+   <script type="text/javascript">
+        window.onload=function(){
+            if( window.location.hash.length > 0){
+                window.scroll(0,window.scrollY-32);
+            }
+            if( window.location.search.length > 0){
+                let search_string=decodeURI(window.location.search.substring(1));
+                window.find(search_string,false,false,true,false,true);
+            }
+        }
+        function show_nrec_record(nrec,onoff){
+            let tr_objs= document.evaluate("/html//tr[@nrec=\""+nrec+"\"]",document,null,XPathResult.ANY_TYPE, null);
+            let tr_node= tr_objs.iterateNext();
+            while(tr_node){
+                if( onoff ){
+                    tr_node.style.display="";
+                } else {
+                    tr_node.style.display="none";
+                }
+                tr_node= tr_objs.iterateNext();
+            }
+        }
+        function show_nohits_record(obj){
+            if( obj.checked){
+                onoff=true;
+            } else {
+                onoff=false;
+            }
+            let xp_results_0= document.evaluate("/html//td[@hits_status=\"1\"]",document,null,XPathResult.ANY_TYPE, null);
+            let node= xp_results_0.iterateNext();
+            let nrec_hits=[];
+            while( node){
+                let nrec= node.getAttribute("nrec");
+                nrec_hits.push(nrec);
+                show_nrec_record(nrec,true);
+                node= xp_results_0.iterateNext();
+            }
+            show_nrec_record(onoff);
+            let xp_results= document.evaluate("/html//td[@hits_status=\"0\"]",document,null,XPathResult.ANY_TYPE, null);
+            node= xp_results.iterateNext();
+            while( node){
+                let nrec= node.getAttribute("nrec");
+                if( nrec_hits.indexOf(nrec) != -1){
+                    node= xp_results.iterateNext();
+                    continue;
+                }
+                show_nrec_record(nrec, onoff);
+                node= xp_results.iterateNext();
+            }
+        }
+        function word_color(word,color_code){
+            var nodes= document.getElementsByTagName("td");
+            let count=0;
+            for(var i=0; i< nodes.length; i++){
+                // let wre= word.replace(/[\^$.*+?()\[\]{}|]/g, '\\$&');
+                let wre= word.replace(/</g, '&lt;');
+                wre= wre.replace(/>/g, '&gt;');
+                let re= new RegExp('(?<!<[^>]*)('+wre+')','gi');
+                nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
+                count_0= (nodes[i].innerHTML.match(re) ||[]).length;
+                if( count_0 > 0){
+                    nodes[i].setAttribute("hits_status","1");
+                }
+                count= count+ count_0;
+            }
+            return count;
+        }
+        function word_color_reset(){
+            var nodes= document.getElementsByTagName("td");
+            for(var i=0; i< nodes.length; i++){
+                span_head='<span class="word_view_span"'
+                let re = new RegExp(span_head+' style="color:[^"]+">([^<]+?)</span>','gi');
+                while( nodes[i].innerHTML.indexOf(span_head) != -1){
+                    nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                    nodes[i].setAttribute("hits_status","0");
+                }
+            }
+        }
+        function emphasis_words(obj){
+            let wc_defs= obj.value;
+            let re_s= new RegExp(/(?<!\\)\s*,\s*/,'g')
+            obj.value= obj.value.replace(re_s,", ");
+            let re= /\s*(?<!\\),\s*/;
+            let cvs= wc_defs.split(re);
+            let word_counts={};
+            word_color_reset();
+            cvs.forEach(
+                function (val ){
+                    if(val==""){
+                        return;
+                    }
+                    let re= /\s*(?<!\\):\s*/;
+                    cvs=val.split(re);
+                    var w="";
+                    var c="";
+                    if( cvs.length < 2){
+                        // alert("??error:word_view:invalid definition: '"+val+"'");
+                        w= cvs[0];
+                        c="red";
+                    } else {
+                        let re= new RegExp('\\\\([,:])','g');
+                        w= cvs[0];
+                        w=w.replace(re,'$1');
+                        c= cvs[1];
+                    }
+                    if(!c.match(/^[a-zA-Z0-9#]+$/)){
+                        alert("??error:word_view:invalid color code: '"+c+"'");
+                        return;
+                    }
+                    try{
+                        word_counts[String(w)]=word_color(w,c);
+                    } catch(e){
+                        alert("??error:word_view:invalid definition: '"+val+"' :"+e);
+                    }
+                }
+            );
+            let sh_obj= document.getElementById("showhide_hits");
+            show_nohits_record(sh_obj);
+            let swr= document.getElementById('search_word_result');
+            swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
+        }
+        function show_word_search(){
+            let fobj= document.getElementById("word_search");
+
+            sty_visibility=fobj.style.visibility;
+            if( sty_visibility == "" || sty_visibility == "hidden"){
+                fobj.style.visibility="visible"
+            } else {
+                fobj.style.visibility="hidden"
+            }
+        }
+   </script>
+    <form action="" onsubmit="return false;" class="word_search" id="word_search" ondblclick="show_word_search();">
+      <fieldset style="padding-top:0pt;padding-bottom:0pt;">
+	<legend>語句色付け定義</legend>
+	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="吾輩,人間,我慢,書斎"><br/>
+	<input type="checkbox" id="showhide_hits" name="showhide_hits" checked onchange="show_nohits_record(this)"/>
+        <label for="showhide_hist" style="font-size:0.5em;">全レコード表示</label><br/>
+        <span style="font-size:0.5em;">
+	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句には正規表現を利用可能<br>
+        語句だけ指定した場合は、赤色が指定されたものとして処理される。
+        語句に半角カンマ、コロンを含める場合はBackslash(\)によりエスケープする必要がある。
+        また、&lt;&gt;は検索時に&amp;lt;&amp;gt;として検索されることに注意。<br>
+        Ex: ABC:red,DEF\,GHI:blue,\d+人:black
+        </span><br>
+        <span style="font-size:small;" id="search_word_result"></span>
+      </fieldset>
+    </form>
+<div id='tablecontainer'>
+<table class="sticky_table display nowrap" style="width:100%;">
+<thead ondblclick="show_word_search();">
+<th colspan="2">Observation/Investigation/Action</th>
+</thead>
+<tbody>
+<tr style="background-color:#eeffee;" nrec="0" id="rid_0">
+<td colspan="4" nrec="0" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>《わがはい》は猫である。名前はまだ無い。</td>
+</tr>
+<tr  nrec="1" id="rid_1">
+<td colspan="4" nrec="1" hits_status="0">どこで生れたかとんと見当《けんとう》がつかぬ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="2" id="rid_2">
+<td colspan="4" nrec="2" hits_status="0">何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。</td>
+</tr>
+<tr  nrec="3" id="rid_3">
+<td colspan="4" nrec="3" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はここで始めて<span class="word_view_span" style="color:red;">人間</span>というものを見た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="4" id="rid_4">
+<td colspan="4" nrec="4" hits_status="1">しかもあとで聞くとそれは書生という<span class="word_view_span" style="color:red;">人間</span>中で一番｜獰悪《どうあく》な種族であったそうだ。</td>
+</tr>
+<tr  nrec="5" id="rid_5">
+<td colspan="4" nrec="5" hits_status="0">この書生というのは時々我々を捕《つかま》えて煮《に》て食うという話である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="6" id="rid_6">
+<td colspan="4" nrec="6" hits_status="0">しかしその当時は何という考もなかったから別段恐しいとも思わなかった。</td>
+</tr>
+<tr  nrec="7" id="rid_7">
+<td colspan="4" nrec="7" hits_status="0">ただ彼の掌《てのひら》に載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="8" id="rid_8">
+<td colspan="4" nrec="8" hits_status="1">掌の上で少し落ちついて書生の顔を見たのがいわゆる<span class="word_view_span" style="color:red;">人間</span>というものの見始《みはじめ》であろう。</td>
+</tr>
+<tr  nrec="9" id="rid_9">
+<td colspan="4" nrec="9" hits_status="0">この時妙なものだと思った感じが今でも残っている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="10" id="rid_10">
+<td colspan="4" nrec="10" hits_status="0">第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶《やかん》だ。</td>
+</tr>
+<tr  nrec="11" id="rid_11">
+<td colspan="4" nrec="11" hits_status="0">その後《ご》猫にもだいぶ逢《あ》ったがこんな片輪《かたわ》には一度も出会《でく》わした事がない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="12" id="rid_12">
+<td colspan="4" nrec="12" hits_status="0">のみならず顔の真中があまりに突起している。</td>
+</tr>
+<tr  nrec="13" id="rid_13">
+<td colspan="4" nrec="13" hits_status="0">そうしてその穴の中から時々ぷうぷうと煙《けむり》を吹く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="14" id="rid_14">
+<td colspan="4" nrec="14" hits_status="0">どうも咽《む》せぽくて実に弱った。</td>
+</tr>
+<tr  nrec="15" id="rid_15">
+<td colspan="4" nrec="15" hits_status="1">これが<span class="word_view_span" style="color:red;">人間</span>の飲む煙草《たばこ》というものである事はようやくこの頃知った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="16" id="rid_16">
+<td colspan="4" nrec="16" hits_status="0">この書生の掌の裏《うち》でしばらくはよい心持に坐っておったが、しばらくすると非常な速力で運転し始めた。</td>
+</tr>
+<tr  nrec="17" id="rid_17">
+<td colspan="4" nrec="17" hits_status="0">書生が動くのか自分だけが動くのか分らないが無暗《むやみ》に眼が廻る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="18" id="rid_18">
+<td colspan="4" nrec="18" hits_status="0">胸が悪くなる。</td>
+</tr>
+<tr  nrec="19" id="rid_19">
+<td colspan="4" nrec="19" hits_status="0">到底《とうてい》助からないと思っていると、どさりと音がして眼から火が出た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="20" id="rid_20">
+<td colspan="4" nrec="20" hits_status="0">それまでは記憶しているがあとは何の事やらいくら考え出そうとしても分らない。</td>
+</tr>
+<tr  nrec="21" id="rid_21">
+<td colspan="4" nrec="21" hits_status="0">ふと気が付いて見ると書生はいない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="22" id="rid_22">
+<td colspan="4" nrec="22" hits_status="0">たくさんおった兄弟が一｜疋《ぴき》も見えぬ。</td>
+</tr>
+<tr  nrec="23" id="rid_23">
+<td colspan="4" nrec="23" hits_status="0">肝心《かんじん》の母親さえ姿を隠してしまった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="24" id="rid_24">
+<td colspan="4" nrec="24" hits_status="0">その上｜今《いま》までの所とは違って無暗《むやみ》に明るい。</td>
+</tr>
+<tr  nrec="25" id="rid_25">
+<td colspan="4" nrec="25" hits_status="0">眼を明いていられぬくらいだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="26" id="rid_26">
+<td colspan="4" nrec="26" hits_status="0">はてな何でも容子《ようす》がおかしいと、のそのそ這《は》い出して見ると非常に痛い。</td>
+</tr>
+<tr  nrec="27" id="rid_27">
+<td colspan="4" nrec="27" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は藁《わら》の上から急に笹原の中へ棄てられたのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="28" id="rid_28">
+<td colspan="4" nrec="28" hits_status="0">ようやくの思いで笹原を這い出すと向うに大きな池がある。</td>
+</tr>
+<tr  nrec="29" id="rid_29">
+<td colspan="4" nrec="29" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は池の前に坐ってどうしたらよかろうと考えて見た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="30" id="rid_30">
+<td colspan="4" nrec="30" hits_status="0">別にこれという分別《ふんべつ》も出ない。</td>
+</tr>
+<tr  nrec="31" id="rid_31">
+<td colspan="4" nrec="31" hits_status="0">しばらくして泣いたら書生がまた迎に来てくれるかと考え付いた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="32" id="rid_32">
+<td colspan="4" nrec="32" hits_status="0">ニャー、ニャーと試みにやって見たが誰も来ない。</td>
+</tr>
+<tr  nrec="33" id="rid_33">
+<td colspan="4" nrec="33" hits_status="0">そのうち池の上をさらさらと風が渡って日が暮れかかる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="34" id="rid_34">
+<td colspan="4" nrec="34" hits_status="0">腹が非常に減って来た。</td>
+</tr>
+<tr  nrec="35" id="rid_35">
+<td colspan="4" nrec="35" hits_status="0">泣きたくても声が出ない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="36" id="rid_36">
+<td colspan="4" nrec="36" hits_status="0">仕方がない、何でもよいから食物《くいもの》のある所まであるこうと決心をしてそろりそろりと池を左《ひだ》りに廻り始めた。</td>
+</tr>
+<tr  nrec="37" id="rid_37">
+<td colspan="4" nrec="37" hits_status="0">どうも非常に苦しい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="38" id="rid_38">
+<td colspan="4" nrec="38" hits_status="1">そこを<span class="word_view_span" style="color:red;">我慢</span>して無理やりに這《は》って行くとようやくの事で何となく<span class="word_view_span" style="color:red;">人間</span>臭い所へ出た。</td>
+</tr>
+<tr  nrec="39" id="rid_39">
+<td colspan="4" nrec="39" hits_status="0">ここへ這入《はい》ったら、どうにかなると思って竹垣の崩《くず》れた穴から、とある邸内にもぐり込んだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="40" id="rid_40">
+<td colspan="4" nrec="40" hits_status="1">縁は不思議なもので、もしこの竹垣が破れていなかったなら、<span class="word_view_span" style="color:red;">吾輩</span>はついに路傍《ろぼう》に餓死《がし》したかも知れんのである。</td>
+</tr>
+<tr  nrec="41" id="rid_41">
+<td colspan="4" nrec="41" hits_status="0">一樹の蔭とはよく云《い》ったものだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="42" id="rid_42">
+<td colspan="4" nrec="42" hits_status="1">この垣根の穴は今日《こんにち》に至るまで<span class="word_view_span" style="color:red;">吾輩</span>が隣家《となり》の三毛を訪問する時の通路になっている。</td>
+</tr>
+<tr  nrec="43" id="rid_43">
+<td colspan="4" nrec="43" hits_status="0">さて邸《やしき》へは忍び込んだもののこれから先どうして善《い》いか分らない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="44" id="rid_44">
+<td colspan="4" nrec="44" hits_status="0">そのうちに暗くなる、腹は減る、寒さは寒し、雨が降って来るという始末でもう一刻の猶予《ゆうよ》が出来なくなった。</td>
+</tr>
+<tr  nrec="45" id="rid_45">
+<td colspan="4" nrec="45" hits_status="0">仕方がないからとにかく明るくて暖かそうな方へ方へとあるいて行く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="46" id="rid_46">
+<td colspan="4" nrec="46" hits_status="0">今から考えるとその時はすでに家の内に這入っておったのだ。</td>
+</tr>
+<tr  nrec="47" id="rid_47">
+<td colspan="4" nrec="47" hits_status="1">ここで<span class="word_view_span" style="color:red;">吾輩</span>は彼《か》の書生以外の<span class="word_view_span" style="color:red;">人間</span>を再び見るべき機会に遭遇《そうぐう》したのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="48" id="rid_48">
+<td colspan="4" nrec="48" hits_status="0">第一に逢ったのがおさんである。</td>
+</tr>
+<tr  nrec="49" id="rid_49">
+<td colspan="4" nrec="49" hits_status="1">これは前の書生より一層乱暴な方で<span class="word_view_span" style="color:red;">吾輩</span>を見るや否やいきなり頸筋《くびすじ》をつかんで表へ抛《ほう》り出した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="50" id="rid_50">
+<td colspan="4" nrec="50" hits_status="0">いやこれは駄目だと思ったから眼をねぶって運を天に任せていた。</td>
+</tr>
+<tr  nrec="51" id="rid_51">
+<td colspan="4" nrec="51" hits_status="1">しかしひもじいのと寒いのにはどうしても<span class="word_view_span" style="color:red;">我慢</span>が出来ん。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="52" id="rid_52">
+<td colspan="4" nrec="52" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は再びおさんの隙《すき》を見て台所へ這《は》い上《あが》った。</td>
+</tr>
+<tr  nrec="53" id="rid_53">
+<td colspan="4" nrec="53" hits_status="0">すると間もなくまた投げ出された。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="54" id="rid_54">
+<td colspan="4" nrec="54" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は投げ出されては這い上り、這い上っては投げ出され、何でも同じ事を四五遍繰り返したのを記憶している。</td>
+</tr>
+<tr  nrec="55" id="rid_55">
+<td colspan="4" nrec="55" hits_status="0">その時におさんと云う者はつくづくいやになった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="56" id="rid_56">
+<td colspan="4" nrec="56" hits_status="0">この間おさんの三馬《さんま》を偸《ぬす》んでこの返報をしてやってから、やっと胸の痞《つかえ》が下りた。</td>
+</tr>
+<tr  nrec="57" id="rid_57">
+<td colspan="4" nrec="57" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>が最後につまみ出されようとしたときに、この家《うち》の主人が騒々しい何だといいながら出て来た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="58" id="rid_58">
+<td colspan="4" nrec="58" hits_status="1">下女は<span class="word_view_span" style="color:red;">吾輩</span>をぶら下げて主人の方へ向けてこの宿《やど》なしの小猫がいくら出しても出しても御台所《おだいどころ》へ上《あが》って来て困りますという。</td>
+</tr>
+<tr  nrec="59" id="rid_59">
+<td colspan="4" nrec="59" hits_status="1">主人は鼻の下の黒い毛を撚《ひね》りながら<span class="word_view_span" style="color:red;">吾輩</span>の顔をしばらく眺《なが》めておったが、やがてそんなら内へ置いてやれといったまま奥へ這入《はい》ってしまった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="60" id="rid_60">
+<td colspan="4" nrec="60" hits_status="0">主人はあまり口を聞かぬ人と見えた。</td>
+</tr>
+<tr  nrec="61" id="rid_61">
+<td colspan="4" nrec="61" hits_status="1">下女は口惜《くや》しそうに<span class="word_view_span" style="color:red;">吾輩</span>を台所へ抛《ほう》り出した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="62" id="rid_62">
+<td colspan="4" nrec="62" hits_status="1">かくして<span class="word_view_span" style="color:red;">吾輩</span>はついにこの家《うち》を自分の住家《すみか》と極《き》める事にしたのである。</td>
+</tr>
+<tr  nrec="63" id="rid_63">
+<td colspan="4" nrec="63" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>の主人は滅多《めった》に<span class="word_view_span" style="color:red;">吾輩</span>と顔を合せる事がない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="64" id="rid_64">
+<td colspan="4" nrec="64" hits_status="0">職業は教師だそうだ。</td>
+</tr>
+<tr  nrec="65" id="rid_65">
+<td colspan="4" nrec="65" hits_status="1">学校から帰ると終日<span class="word_view_span" style="color:red;">書斎</span>に這入ったぎりほとんど出て来る事がない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="66" id="rid_66">
+<td colspan="4" nrec="66" hits_status="0">家のものは大変な勉強家だと思っている。</td>
+</tr>
+<tr  nrec="67" id="rid_67">
+<td colspan="4" nrec="67" hits_status="0">当人も勉強家であるかのごとく見せている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="68" id="rid_68">
+<td colspan="4" nrec="68" hits_status="0">しかし実際はうちのものがいうような勤勉家ではない。</td>
+</tr>
+<tr  nrec="69" id="rid_69">
+<td colspan="4" nrec="69" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は時々忍び足に彼の<span class="word_view_span" style="color:red;">書斎</span>を覗《のぞ》いて見るが、彼はよく昼寝《ひるね》をしている事がある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="70" id="rid_70">
+<td colspan="4" nrec="70" hits_status="0">時々読みかけてある本の上に涎《よだれ》をたらしている。</td>
+</tr>
+<tr  nrec="71" id="rid_71">
+<td colspan="4" nrec="71" hits_status="0">彼は胃弱で皮膚の色が淡黄色《たんこうしょく》を帯びて弾力のない不活溌《ふかっぱつ》な徴候をあらわしている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="72" id="rid_72">
+<td colspan="4" nrec="72" hits_status="0">その癖に大飯を食う。</td>
+</tr>
+<tr  nrec="73" id="rid_73">
+<td colspan="4" nrec="73" hits_status="0">大飯を食った後《あと》でタカジヤスターゼを飲む。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="74" id="rid_74">
+<td colspan="4" nrec="74" hits_status="0">飲んだ後で書物をひろげる。</td>
+</tr>
+<tr  nrec="75" id="rid_75">
+<td colspan="4" nrec="75" hits_status="0">二三ページ読むと眠くなる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="76" id="rid_76">
+<td colspan="4" nrec="76" hits_status="0">涎を本の上へ垂らす。</td>
+</tr>
+<tr  nrec="77" id="rid_77">
+<td colspan="4" nrec="77" hits_status="0">これが彼の毎夜繰り返す日課である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="78" id="rid_78">
+<td colspan="4" nrec="78" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は猫ながら時々考える事がある。</td>
+</tr>
+<tr  nrec="79" id="rid_79">
+<td colspan="4" nrec="79" hits_status="0">教師というものは実に楽《らく》なものだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="80" id="rid_80">
+<td colspan="4" nrec="80" hits_status="1"><span class="word_view_span" style="color:red;">人間</span>と生れたら教師となるに限る。</td>
+</tr>
+<tr  nrec="81" id="rid_81">
+<td colspan="4" nrec="81" hits_status="0">こんなに寝ていて勤まるものなら猫にでも出来ぬ事はないと。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="82" id="rid_82">
+<td colspan="4" nrec="82" hits_status="0">それでも主人に云わせると教師ほどつらいものはないそうで彼は友達が来る度《たび》に何とかかんとか不平を鳴らしている。</td>
+</tr>
+<tr  nrec="83" id="rid_83">
+<td colspan="4" nrec="83" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>がこの家へ住み込んだ当時は、主人以外のものにははなはだ不人望であった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="84" id="rid_84">
+<td colspan="4" nrec="84" hits_status="0">どこへ行っても跳《は》ね付けられて相手にしてくれ手がなかった。</td>
+</tr>
+<tr  nrec="85" id="rid_85">
+<td colspan="4" nrec="85" hits_status="0">いかに珍重されなかったかは、今日《こんにち》に至るまで名前さえつけてくれないのでも分る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="86" id="rid_86">
+<td colspan="4" nrec="86" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は仕方がないから、出来得る限り<span class="word_view_span" style="color:red;">吾輩</span>を入れてくれた主人の傍《そば》にいる事をつとめた。</td>
+</tr>
+<tr  nrec="87" id="rid_87">
+<td colspan="4" nrec="87" hits_status="0">朝主人が新聞を読むときは必ず彼の膝《ひざ》の上に乗る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="88" id="rid_88">
+<td colspan="4" nrec="88" hits_status="0">彼が昼寝をするときは必ずその背中《せなか》に乗る。</td>
+</tr>
+<tr  nrec="89" id="rid_89">
+<td colspan="4" nrec="89" hits_status="0">これはあながち主人が好きという訳ではないが別に構い手がなかったからやむを得んのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="90" id="rid_90">
+<td colspan="4" nrec="90" hits_status="0">その後いろいろ経験の上、朝は飯櫃《めしびつ》の上、夜は炬燵《こたつ》の上、天気のよい昼は椽側《えんがわ》へ寝る事とした。</td>
+</tr>
+<tr  nrec="91" id="rid_91">
+<td colspan="4" nrec="91" hits_status="0">しかし一番心持の好いのは夜《よ》に入《い》ってここのうちの小供の寝床へもぐり込んでいっしょにねる事である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="92" id="rid_92">
+<td colspan="4" nrec="92" hits_status="0">この小供というのは五つと三つで夜になると二人が一つ床へ入《はい》って一間《ひとま》へ寝る。</td>
+</tr>
+<tr  nrec="93" id="rid_93">
+<td colspan="4" nrec="93" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はいつでも彼等の中間に己《おの》れを容《い》るべき余地を見出《みいだ》してどうにか、こうにか割り込むのであるが、運悪く小供の一人が眼を醒《さ》ますが最後大変な事になる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="94" id="rid_94">
+<td colspan="4" nrec="94" hits_status="0">小供は——ことに小さい方が質《たち》がわるい——猫が来た猫が来たといって夜中でも何でも大きな声で泣き出すのである。</td>
+</tr>
+<tr  nrec="95" id="rid_95">
+<td colspan="4" nrec="95" hits_status="0">すると例の神経胃弱性の主人は必《かなら》ず眼をさまして次の部屋から飛び出してくる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="96" id="rid_96">
+<td colspan="4" nrec="96" hits_status="0">現にせんだってなどは物指《ものさし》で尻ぺたをひどく叩《たた》かれた。</td>
+</tr>
+<tr  nrec="97" id="rid_97">
+<td colspan="4" nrec="97" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は<span class="word_view_span" style="color:red;">人間</span>と同居して彼等を観察すればするほど、彼等は我儘《わがまま》なものだと断言せざるを得ないようになった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="98" id="rid_98">
+<td colspan="4" nrec="98" hits_status="1">ことに<span class="word_view_span" style="color:red;">吾輩</span>が時々｜同衾《どうきん》する小供のごときに至っては言語同断《ごんごどうだん》である。</td>
+</tr>
+<tr  nrec="99" id="rid_99">
+<td colspan="4" nrec="99" hits_status="0">自分の勝手な時は人を逆さにしたり、頭へ袋をかぶせたり、抛《ほう》り出したり、へっつい［＃「へっつい」に傍点］の中へ押し込んだりする。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="100" id="rid_100">
+<td colspan="4" nrec="100" hits_status="1">しかも<span class="word_view_span" style="color:red;">吾輩</span>の方で少しでも手出しをしようものなら家内《かない》総がかりで追い廻して迫害を加える。</td>
+</tr>
+<tr  nrec="101" id="rid_101">
+<td colspan="4" nrec="101" hits_status="0">この間もちょっと畳で爪を磨《と》いだら細君が非常に怒《おこ》ってそれから容易に座敷へ入《い》れない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="102" id="rid_102">
+<td colspan="4" nrec="102" hits_status="0">台所の板の間で他《ひと》が顫《ふる》えていても一向《いっこう》平気なものである。</td>
+</tr>
+<tr  nrec="103" id="rid_103">
+<td colspan="4" nrec="103" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>の尊敬する筋向《すじむこう》の白君などは逢《あ》う度毎《たびごと》に<span class="word_view_span" style="color:red;">人間</span>ほど不人情なものはないと言っておらるる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="104" id="rid_104">
+<td colspan="4" nrec="104" hits_status="0">白君は先日玉のような子猫を四疋｜産《う》まれたのである。</td>
+</tr>
+<tr  nrec="105" id="rid_105">
+<td colspan="4" nrec="105" hits_status="0">ところがそこの家《うち》の書生が三日目にそいつを裏の池へ持って行って四疋ながら棄てて来たそうだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="106" id="rid_106">
+<td colspan="4" nrec="106" hits_status="1">白君は涙を流してその一部始終を話した上、どうしても我等｜猫族《ねこぞく》が親子の愛を完《まった》くして美しい家族的生活をするには<span class="word_view_span" style="color:red;">人間</span>と戦ってこれを剿滅《そうめつ》せねばならぬといわれた。</td>
+</tr>
+<tr  nrec="107" id="rid_107">
+<td colspan="4" nrec="107" hits_status="0">一々もっともの議論と思う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="108" id="rid_108">
+<td colspan="4" nrec="108" hits_status="1">また隣りの三毛《みけ》君などは<span class="word_view_span" style="color:red;">人間</span>が所有権という事を解していないといって大《おおい》に憤慨している。</td>
+</tr>
+<tr  nrec="109" id="rid_109">
+<td colspan="4" nrec="109" hits_status="0">元来我々同族間では目刺《めざし》の頭でも鰡《ぼら》の臍《へそ》でも一番先に見付けたものがこれを食う権利があるものとなっている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="110" id="rid_110">
+<td colspan="4" nrec="110" hits_status="0">もし相手がこの規約を守らなければ腕力に訴えて善《よ》いくらいのものだ。</td>
+</tr>
+<tr  nrec="111" id="rid_111">
+<td colspan="4" nrec="111" hits_status="1">しかるに彼等<span class="word_view_span" style="color:red;">人間</span>は毫《ごう》もこの観念がないと見えて我等が見付けた御馳走は必ず彼等のために掠奪《りゃくだつ》せらるるのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="112" id="rid_112">
+<td colspan="4" nrec="112" hits_status="0">彼等はその強力を頼んで正当に吾人が食い得べきものを奪《うば》ってすましている。</td>
+</tr>
+<tr  nrec="113" id="rid_113">
+<td colspan="4" nrec="113" hits_status="0">白君は軍人の家におり三毛君は代言の主人を持っている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="114" id="rid_114">
+<td colspan="4" nrec="114" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は教師の家に住んでいるだけ、こんな事に関すると両君よりもむしろ楽天である。</td>
+</tr>
+<tr  nrec="115" id="rid_115">
+<td colspan="4" nrec="115" hits_status="0">ただその日その日がどうにかこうにか送られればよい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="116" id="rid_116">
+<td colspan="4" nrec="116" hits_status="1">いくら<span class="word_view_span" style="color:red;">人間</span>だって、そういつまでも栄える事もあるまい。</td>
+</tr>
+<tr  nrec="117" id="rid_117">
+<td colspan="4" nrec="117" hits_status="0">まあ気を永く猫の時節を待つがよかろう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="118" id="rid_118">
+<td colspan="4" nrec="118" hits_status="1">我儘《わがまま》で思い出したからちょっと<span class="word_view_span" style="color:red;">吾輩</span>の家の主人がこの我儘で失敗した話をしよう。</td>
+</tr>
+<tr  nrec="119" id="rid_119">
+<td colspan="4" nrec="119" hits_status="0">元来この主人は何といって人に勝《すぐ》れて出来る事もないが、何にでもよく手を出したがる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="120" id="rid_120">
+<td colspan="4" nrec="120" hits_status="0">俳句をやってほととぎす［＃「ほととぎす」に傍点］へ投書をしたり、新体詩を明星［＃「明星」に傍点］へ出したり、間違いだらけの英文をかいたり、時によると弓に凝《こ》ったり、謡《うたい》を習ったり、またあるときはヴァイオリンなどをブーブー鳴らしたりするが、気の毒な事には、どれもこれも物になっておらん。</td>
+</tr>
+<tr  nrec="121" id="rid_121">
+<td colspan="4" nrec="121" hits_status="0">その癖やり出すと胃弱の癖にいやに熱心だ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="122" id="rid_122">
+<td colspan="4" nrec="122" hits_status="0">後架《こうか》の中で謡をうたって、近所で後架先生《こうかせんせい》と渾名《あだな》をつけられているにも関せず一向《いっこう》平気なもので、やはりこれは平《たいら》の宗盛《むねもり》にて候《そうろう》を繰返している。</td>
+</tr>
+<tr  nrec="123" id="rid_123">
+<td colspan="4" nrec="123" hits_status="0">みんながそら宗盛だと吹き出すくらいである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="124" id="rid_124">
+<td colspan="4" nrec="124" hits_status="1">この主人がどういう考になったものか<span class="word_view_span" style="color:red;">吾輩</span>の住み込んでから一月ばかり後《のち》のある月の月給日に、大きな包みを提《さ》げてあわただしく帰って来た。</td>
+</tr>
+<tr  nrec="125" id="rid_125">
+<td colspan="4" nrec="125" hits_status="0">何を買って来たのかと思うと水彩絵具と毛筆とワットマンという紙で今日から謡や俳句をやめて絵をかく決心と見えた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="126" id="rid_126">
+<td colspan="4" nrec="126" hits_status="1">果して翌日から当分の間というものは毎日毎日<span class="word_view_span" style="color:red;">書斎</span>で昼寝もしないで絵ばかりかいている。</td>
+</tr>
+<tr  nrec="127" id="rid_127">
+<td colspan="4" nrec="127" hits_status="0">しかしそのかき上げたものを見ると何をかいたものやら誰にも鑑定がつかない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="128" id="rid_128">
+<td colspan="4" nrec="128" hits_status="0">当人もあまり甘《うま》くないと思ったものか、ある日その友人で美学とかをやっている人が来た時に下《しも》のような話をしているのを聞いた。</td>
+</tr>
+<tr  nrec="129" id="rid_129">
+<td colspan="4" nrec="129" hits_status="0">「どうも甘《うま》くかけないものだね。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="130" id="rid_130">
+<td colspan="4" nrec="130" hits_status="0">人のを見ると何でもないようだが自《みずか》ら筆をとって見ると今更《いまさら》のようにむずかしく感ずる」これは主人の述懐《じゅっかい》である。</td>
+</tr>
+<tr  nrec="131" id="rid_131">
+<td colspan="4" nrec="131" hits_status="0">なるほど詐《いつわ》りのない処だ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="132" id="rid_132">
+<td colspan="4" nrec="132" hits_status="0">彼の友は金縁の眼鏡越《めがねごし》に主人の顔を見ながら、「そう初めから上手にはかけないさ、第一室内の想像ばかりで画《え》がかける訳のものではない。</td>
+</tr>
+<tr  nrec="133" id="rid_133">
+<td colspan="4" nrec="133" hits_status="0">昔《むか》し以太利《イタリー》の大家アンドレア・デル・サルトが言った事がある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="134" id="rid_134">
+<td colspan="4" nrec="134" hits_status="0">画をかくなら何でも自然その物を写せ。</td>
+</tr>
+<tr  nrec="135" id="rid_135">
+<td colspan="4" nrec="135" hits_status="0">天に星辰《せいしん》あり。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="136" id="rid_136">
+<td colspan="4" nrec="136" hits_status="0">地に露華《ろか》あり。</td>
+</tr>
+<tr  nrec="137" id="rid_137">
+<td colspan="4" nrec="137" hits_status="0">飛ぶに禽《とり》あり。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="138" id="rid_138">
+<td colspan="4" nrec="138" hits_status="0">走るに獣《けもの》あり。</td>
+</tr>
+<tr  nrec="139" id="rid_139">
+<td colspan="4" nrec="139" hits_status="0">池に金魚あり。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="140" id="rid_140">
+<td colspan="4" nrec="140" hits_status="0">枯木《こぼく》に寒鴉《かんあ》あり。</td>
+</tr>
+<tr  nrec="141" id="rid_141">
+<td colspan="4" nrec="141" hits_status="0">自然はこれ一幅の大活画《だいかつが》なりと。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="142" id="rid_142">
+<td colspan="4" nrec="142" hits_status="0">どうだ君も画らしい画をかこうと思うならちと写生をしたら」</td>
+</tr>
+<tr  nrec="143" id="rid_143">
+<td colspan="4" nrec="143" hits_status="0">「へえアンドレア・デル・サルトがそんな事をいった事があるかい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="144" id="rid_144">
+<td colspan="4" nrec="144" hits_status="0">ちっとも知らなかった。</td>
+</tr>
+<tr  nrec="145" id="rid_145">
+<td colspan="4" nrec="145" hits_status="0">なるほどこりゃもっともだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="146" id="rid_146">
+<td colspan="4" nrec="146" hits_status="0">実にその通りだ」と主人は無暗《むやみ》に感心している。</td>
+</tr>
+<tr  nrec="147" id="rid_147">
+<td colspan="4" nrec="147" hits_status="0">金縁の裏には嘲《あざ》けるような笑《わらい》が見えた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="148" id="rid_148">
+<td colspan="4" nrec="148" hits_status="1">　その翌日<span class="word_view_span" style="color:red;">吾輩</span>は例のごとく椽側《えんがわ》に出て心持善く昼寝《ひるね》をしていたら、主人が例になく<span class="word_view_span" style="color:red;">書斎</span>から出て来て<span class="word_view_span" style="color:red;">吾輩</span>の後《うし》ろで何かしきりにやっている。</td>
+</tr>
+<tr  nrec="149" id="rid_149">
+<td colspan="4" nrec="149" hits_status="0">ふと眼が覚《さ》めて何をしているかと一分《いちぶ》ばかり細目に眼をあけて見ると、彼は余念もなくアンドレア・デル・サルトを極《き》め込んでいる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="150" id="rid_150">
+<td colspan="4" nrec="150" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はこの有様を見て覚えず失笑するのを禁じ得なかった。</td>
+</tr>
+<tr  nrec="151" id="rid_151">
+<td colspan="4" nrec="151" hits_status="1">彼は彼の友に揶揄《やゆ》せられたる結果としてまず手初めに<span class="word_view_span" style="color:red;">吾輩</span>を写生しつつあるのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="152" id="rid_152">
+<td colspan="4" nrec="152" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はすでに十分《じゅうぶん》寝た。</td>
+</tr>
+<tr  nrec="153" id="rid_153">
+<td colspan="4" nrec="153" hits_status="0">欠伸《あくび》がしたくてたまらない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="154" id="rid_154">
+<td colspan="4" nrec="154" hits_status="0">しかしせっかく主人が熱心に筆を執《と》っているのを動いては気の毒だと思って、じっと辛棒《しんぼう》しておった。</td>
+</tr>
+<tr  nrec="155" id="rid_155">
+<td colspan="4" nrec="155" hits_status="1">彼は今<span class="word_view_span" style="color:red;">吾輩</span>の輪廓をかき上げて顔のあたりを色彩《いろど》っている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="156" id="rid_156">
+<td colspan="4" nrec="156" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は自白する。</td>
+</tr>
+<tr  nrec="157" id="rid_157">
+<td colspan="4" nrec="157" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は猫として決して上乗の出来ではない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="158" id="rid_158">
+<td colspan="4" nrec="158" hits_status="0">背といい毛並といい顔の造作といいあえて他の猫に勝《まさ》るとは決して思っておらん。</td>
+</tr>
+<tr  nrec="159" id="rid_159">
+<td colspan="4" nrec="159" hits_status="1">しかしいくら不器量の<span class="word_view_span" style="color:red;">吾輩</span>でも、今<span class="word_view_span" style="color:red;">吾輩</span>の主人に描《えが》き出されつつあるような妙な姿とは、どうしても思われない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="160" id="rid_160">
+<td colspan="4" nrec="160" hits_status="0">第一色が違う。</td>
+</tr>
+<tr  nrec="161" id="rid_161">
+<td colspan="4" nrec="161" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は波斯産《ペルシャさん》の猫のごとく黄を含める淡灰色に漆《うるし》のごとき斑入《ふい》りの皮膚を有している。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="162" id="rid_162">
+<td colspan="4" nrec="162" hits_status="0">これだけは誰が見ても疑うべからざる事実と思う。</td>
+</tr>
+<tr  nrec="163" id="rid_163">
+<td colspan="4" nrec="163" hits_status="0">しかるに今主人の彩色を見ると、黄でもなければ黒でもない、灰色でもなければ褐色《とびいろ》でもない、さればとてこれらを交ぜた色でもない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="164" id="rid_164">
+<td colspan="4" nrec="164" hits_status="0">ただ一種の色であるというよりほかに評し方のない色である。</td>
+</tr>
+<tr  nrec="165" id="rid_165">
+<td colspan="4" nrec="165" hits_status="0">その上不思議な事は眼がない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="166" id="rid_166">
+<td colspan="4" nrec="166" hits_status="0">もっともこれは寝ているところを写生したのだから無理もないが眼らしい所さえ見えないから盲猫《めくら》だか寝ている猫だか判然しないのである。</td>
+</tr>
+<tr  nrec="167" id="rid_167">
+<td colspan="4" nrec="167" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は心中ひそかにいくらアンドレア・デル・サルトでもこれではしようがないと思った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="168" id="rid_168">
+<td colspan="4" nrec="168" hits_status="0">しかしその熱心には感服せざるを得ない。</td>
+</tr>
+<tr  nrec="169" id="rid_169">
+<td colspan="4" nrec="169" hits_status="0">なるべくなら動かずにおってやりたいと思ったが、さっきから小便が催うしている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="170" id="rid_170">
+<td colspan="4" nrec="170" hits_status="0">身内《みうち》の筋肉はむずむずする。</td>
+</tr>
+<tr  nrec="171" id="rid_171">
+<td colspan="4" nrec="171" hits_status="0">最早《もはや》一分も猶予《ゆうよ》が出来ぬ仕儀《しぎ》となったから、やむをえず失敬して両足を前へ存分のして、首を低く押し出してあーあと大《だい》なる欠伸をした。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="172" id="rid_172">
+<td colspan="4" nrec="172" hits_status="0">さてこうなって見ると、もうおとなしくしていても仕方がない。</td>
+</tr>
+<tr  nrec="173" id="rid_173">
+<td colspan="4" nrec="173" hits_status="0">どうせ主人の予定は打《ぶ》ち壊《こ》わしたのだから、ついでに裏へ行って用を足《た》そうと思ってのそのそ這い出した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="174" id="rid_174">
+<td colspan="4" nrec="174" hits_status="0">すると主人は失望と怒りを掻《か》き交ぜたような声をして、座敷の中から「この馬鹿野郎」と怒鳴《どな》った。</td>
+</tr>
+<tr  nrec="175" id="rid_175">
+<td colspan="4" nrec="175" hits_status="0">この主人は人を罵《ののし》るときは必ず馬鹿野郎というのが癖である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="176" id="rid_176">
+<td colspan="4" nrec="176" hits_status="0">ほかに悪口の言いようを知らないのだから仕方がないが、今まで辛棒した人の気も知らないで、無暗《むやみ》に馬鹿野郎｜呼《よば》わりは失敬だと思う。</td>
+</tr>
+<tr  nrec="177" id="rid_177">
+<td colspan="4" nrec="177" hits_status="1">それも平生<span class="word_view_span" style="color:red;">吾輩</span>が彼の背中《せなか》へ乗る時に少しは好い顔でもするならこの漫罵《まんば》も甘んじて受けるが、こっちの便利になる事は何一つ快くしてくれた事もないのに、小便に立ったのを馬鹿野郎とは酷《ひど》い。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="178" id="rid_178">
+<td colspan="4" nrec="178" hits_status="1">元来<span class="word_view_span" style="color:red;">人間</span>というものは自己の力量に慢じてみんな増長している。</td>
+</tr>
+<tr  nrec="179" id="rid_179">
+<td colspan="4" nrec="179" hits_status="1">少し<span class="word_view_span" style="color:red;">人間</span>より強いものが出て来て窘《いじ》めてやらなくてはこの先どこまで増長するか分らない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="180" id="rid_180">
+<td colspan="4" nrec="180" hits_status="1">　我儘《わがまま》もこのくらいなら<span class="word_view_span" style="color:red;">我慢</span>するが<span class="word_view_span" style="color:red;">吾輩</span>は<span class="word_view_span" style="color:red;">人間</span>の不徳についてこれよりも数倍悲しむべき報道を耳にした事がある。</td>
+</tr>
+<tr  nrec="181" id="rid_181">
+<td colspan="4" nrec="181" hits_status="1">　<span class="word_view_span" style="color:red;">吾輩</span>の家の裏に十坪ばかりの茶園《ちゃえん》がある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="182" id="rid_182">
+<td colspan="4" nrec="182" hits_status="0">広くはないが瀟洒《さっぱり》とした心持ち好く日の当《あた》る所だ。</td>
+</tr>
+<tr  nrec="183" id="rid_183">
+<td colspan="4" nrec="183" hits_status="1">うちの小供があまり騒いで楽々昼寝の出来ない時や、あまり退屈で腹加減のよくない折などは、<span class="word_view_span" style="color:red;">吾輩</span>はいつでもここへ出て浩然《こうぜん》の気を養うのが例である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="184" id="rid_184">
+<td colspan="4" nrec="184" hits_status="1">ある小春の穏かな日の二時頃であったが、<span class="word_view_span" style="color:red;">吾輩</span>は昼飯後《ちゅうはんご》快よく一睡した後《のち》、運動かたがたこの茶園へと歩《ほ》を運ばした。</td>
+</tr>
+<tr  nrec="185" id="rid_185">
+<td colspan="4" nrec="185" hits_status="0">茶の木の根を一本一本嗅ぎながら、西側の杉垣のそばまでくると、枯菊を押し倒してその上に大きな猫が前後不覚に寝ている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="186" id="rid_186">
+<td colspan="4" nrec="186" hits_status="1">彼は<span class="word_view_span" style="color:red;">吾輩</span>の近づくのも一向《いっこう》心付かざるごとく、また心付くも無頓着なるごとく、大きな鼾《いびき》をして長々と体を横《よこた》えて眠っている。</td>
+</tr>
+<tr  nrec="187" id="rid_187">
+<td colspan="4" nrec="187" hits_status="1">他《ひと》の庭内に忍び入りたるものがかくまで平気に睡《ねむ》られるものかと、<span class="word_view_span" style="color:red;">吾輩</span>は窃《ひそ》かにその大胆なる度胸に驚かざるを得なかった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="188" id="rid_188">
+<td colspan="4" nrec="188" hits_status="0">彼は純粋の黒猫である。</td>
+</tr>
+<tr  nrec="189" id="rid_189">
+<td colspan="4" nrec="189" hits_status="0">わずかに午《ご》を過ぎたる太陽は、透明なる光線を彼の皮膚の上に抛《な》げかけて、きらきらする柔毛《にこげ》の間より眼に見えぬ炎でも燃《も》え出《い》ずるように思われた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="190" id="rid_190">
+<td colspan="4" nrec="190" hits_status="0">彼は猫中の大王とも云うべきほどの偉大なる体格を有している。</td>
+</tr>
+<tr  nrec="191" id="rid_191">
+<td colspan="4" nrec="191" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>の倍はたしかにある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="192" id="rid_192">
+<td colspan="4" nrec="192" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は嘆賞の念と、好奇の心に前後を忘れて彼の前に佇立《ちょりつ》して余念もなく眺《なが》めていると、静かなる小春の風が、杉垣の上から出たる梧桐《ごとう》の枝を軽《かろ》く誘ってばらばらと二三枚の葉が枯菊の茂みに落ちた。</td>
+</tr>
+<tr  nrec="193" id="rid_193">
+<td colspan="4" nrec="193" hits_status="0">大王はかっとその真丸《まんまる》の眼を開いた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="194" id="rid_194">
+<td colspan="4" nrec="194" hits_status="0">今でも記憶している。</td>
+</tr>
+<tr  nrec="195" id="rid_195">
+<td colspan="4" nrec="195" hits_status="1">その眼は<span class="word_view_span" style="color:red;">人間</span>の珍重する琥珀《こはく》というものよりも遥《はる》かに美しく輝いていた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="196" id="rid_196">
+<td colspan="4" nrec="196" hits_status="0">彼は身動きもしない。</td>
+</tr>
+<tr  nrec="197" id="rid_197">
+<td colspan="4" nrec="197" hits_status="1">双眸《そうぼう》の奥から射るごとき光を<span class="word_view_span" style="color:red;">吾輩</span>の矮小《わいしょう》なる額《ひたい》の上にあつめて、御めえ［＃「御めえ」に傍点］は一体何だと云った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="198" id="rid_198">
+<td colspan="4" nrec="198" hits_status="1">大王にしては少々言葉が卑《いや》しいと思ったが何しろその声の底に犬をも挫《ひ》しぐべき力が籠《こも》っているので<span class="word_view_span" style="color:red;">吾輩</span>は少なからず恐れを抱《いだ》いた。</td>
+</tr>
+<tr  nrec="199" id="rid_199">
+<td colspan="4" nrec="199" hits_status="1">しかし挨拶《あいさつ》をしないと険呑《けんのん》だと思ったから「<span class="word_view_span" style="color:red;">吾輩</span>は猫である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="200" id="rid_200">
+<td colspan="4" nrec="200" hits_status="0">名前はまだない」となるべく平気を装《よそお》って冷然と答えた。</td>
+</tr>
+<tr  nrec="201" id="rid_201">
+<td colspan="4" nrec="201" hits_status="1">しかしこの時<span class="word_view_span" style="color:red;">吾輩</span>の心臓はたしかに平時よりも烈しく鼓動しておった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="202" id="rid_202">
+<td colspan="4" nrec="202" hits_status="0">彼は大《おおい》に軽蔑《けいべつ》せる調子で「何、猫だ？　猫が聞いてあきれらあ。</td>
+</tr>
+<tr  nrec="203" id="rid_203">
+<td colspan="4" nrec="203" hits_status="0">全《ぜん》てえどこに住んでるんだ」随分｜傍若無人《ぼうじゃくぶじん》である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="204" id="rid_204">
+<td colspan="4" nrec="204" hits_status="1">「<span class="word_view_span" style="color:red;">吾輩</span>はここの教師の家《うち》にいるのだ」「どうせそんな事だろうと思った。</td>
+</tr>
+<tr  nrec="205" id="rid_205">
+<td colspan="4" nrec="205" hits_status="0">いやに瘠《や》せてるじゃねえか」と大王だけに気焔《きえん》を吹きかける。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="206" id="rid_206">
+<td colspan="4" nrec="206" hits_status="0">言葉付から察するとどうも良家の猫とも思われない。</td>
+</tr>
+<tr  nrec="207" id="rid_207">
+<td colspan="4" nrec="207" hits_status="0">しかしその膏切《あぶらぎ》って肥満しているところを見ると御馳走を食ってるらしい、豊かに暮しているらしい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="208" id="rid_208">
+<td colspan="4" nrec="208" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は「そう云う君は一体誰だい」と聞かざるを得なかった。</td>
+</tr>
+<tr  nrec="209" id="rid_209">
+<td colspan="4" nrec="209" hits_status="0">「己《お》れあ車屋の黒《くろ》よ」昂然《こうぜん》たるものだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="210" id="rid_210">
+<td colspan="4" nrec="210" hits_status="0">車屋の黒はこの近辺で知らぬ者なき乱暴猫である。</td>
+</tr>
+<tr  nrec="211" id="rid_211">
+<td colspan="4" nrec="211" hits_status="0">しかし車屋だけに強いばかりでちっとも教育がないからあまり誰も交際しない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="212" id="rid_212">
+<td colspan="4" nrec="212" hits_status="0">同盟敬遠主義の的《まと》になっている奴だ。</td>
+</tr>
+<tr  nrec="213" id="rid_213">
+<td colspan="4" nrec="213" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は彼の名を聞いて少々尻こそばゆき感じを起すと同時に、一方では少々｜軽侮《けいぶ》の念も生じたのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="214" id="rid_214">
+<td colspan="4" nrec="214" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はまず彼がどのくらい無学であるかを試《ため》してみようと思って左《さ》の問答をして見た。</td>
+</tr>
+<tr  nrec="215" id="rid_215">
+<td colspan="4" nrec="215" hits_status="0">「一体車屋と教師とはどっちがえらいだろう」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="216" id="rid_216">
+<td colspan="4" nrec="216" hits_status="0">「車屋の方が強いに極《きま》っていらあな。御めえ［＃「御めえ」に傍点］のうち［＃「うち」に傍点］の主人を見ねえ、まるで骨と皮ばかりだぜ」</td>
+</tr>
+<tr  nrec="217" id="rid_217">
+<td colspan="4" nrec="217" hits_status="0">「君も車屋の猫だけに大分《だいぶ》強そうだ。車屋にいると御馳走《ごちそう》が食えると見えるね」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="218" id="rid_218">
+<td colspan="4" nrec="218" hits_status="0">「何《なあ》におれ［＃「おれ」に傍点］なんざ、どこの国へ行ったって食い物に不自由はしねえつもりだ。御めえ［＃「御めえ」に傍点］なんかも茶畠《ちゃばたけ》ばかりぐるぐる廻っていねえで、ちっと己《おれ》の後《あと》へくっ付いて来て見ねえ。</td>
+</tr>
+<tr  nrec="219" id="rid_219">
+<td colspan="4" nrec="219" hits_status="0">一と月とたたねえうちに見違えるように太れるぜ」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="220" id="rid_220">
+<td colspan="4" nrec="220" hits_status="0">「追ってそう願う事にしよう。しかし家《うち》は教師の方が車屋より大きいのに住んでいるように思われる」</td>
+</tr>
+<tr  nrec="221" id="rid_221">
+<td colspan="4" nrec="221" hits_status="0">「箆棒《べらぼう》め、うちなんかいくら大きくたって腹の足《た》しになるもんか」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="222" id="rid_222">
+<td colspan="4" nrec="222" hits_status="0">彼は大《おおい》に肝癪《かんしゃく》に障《さわ》った様子で、寒竹《かんちく》をそいだような耳をしきりとぴく付かせてあららかに立ち去った。</td>
+</tr>
+<tr  nrec="223" id="rid_223">
+<td colspan="4" nrec="223" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>が車屋の黒と知己《ちき》になったのはこれからである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="224" id="rid_224">
+<td colspan="4" nrec="224" hits_status="1">その後《ご》<span class="word_view_span" style="color:red;">吾輩</span>は度々《たびたび》黒と邂逅《かいこう》する。</td>
+</tr>
+<tr  nrec="225" id="rid_225">
+<td colspan="4" nrec="225" hits_status="0">邂逅する毎《ごと》に彼は車屋相当の気焔《きえん》を吐く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="226" id="rid_226">
+<td colspan="4" nrec="226" hits_status="1">先に<span class="word_view_span" style="color:red;">吾輩</span>が耳にしたという不徳事件も実は黒から聞いたのである。</td>
+</tr>
+<tr  nrec="227" id="rid_227">
+<td colspan="4" nrec="227" hits_status="1">或る日例のごとく<span class="word_view_span" style="color:red;">吾輩</span>と黒は暖かい茶畠《ちゃばたけ》の中で寝転《ねころ》びながらいろいろ雑談をしていると、彼はいつもの自慢話《じまんばな》しをさも新しそうに繰り返したあとで、<span class="word_view_span" style="color:red;">吾輩</span>に向って下《しも》のごとく質問した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="228" id="rid_228">
+<td colspan="4" nrec="228" hits_status="0">「御めえ［＃「御めえ」に傍点］は今までに鼠を何匹とった事がある」智識は黒よりも余程発達しているつもりだが腕力と勇気とに至っては到底《とうてい》黒の比較にはならないと覚悟はしていたものの、この問に接したる時は、さすがに極《きま》りが善《よ》くはなかった。</td>
+</tr>
+<tr  nrec="229" id="rid_229">
+<td colspan="4" nrec="229" hits_status="1">けれども事実は事実で詐《いつわ》る訳には行かないから、<span class="word_view_span" style="color:red;">吾輩</span>は「実はとろうとろうと思ってまだ捕《と》らない」と答えた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="230" id="rid_230">
+<td colspan="4" nrec="230" hits_status="0">黒は彼の鼻の先からぴんと突張《つっぱ》っている長い髭《ひげ》をびりびりと震《ふる》わせて非常に笑った。</td>
+</tr>
+<tr  nrec="231" id="rid_231">
+<td colspan="4" nrec="231" hits_status="0">元来黒は自慢をする丈《だけ》にどこか足りないところがあって、彼の気焔《きえん》を感心したように咽喉《のど》をころころ鳴らして謹聴していればはなはだ御《ぎょ》しやすい猫である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="232" id="rid_232">
+<td colspan="4" nrec="232" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は彼と近付になってから直《すぐ》にこの呼吸を飲み込んだからこの場合にもなまじい己《おの》れを弁護してますます形勢をわるくするのも愚《ぐ》である、いっその事彼に自分の手柄話をしゃべらして御茶を濁すに若《し》くはないと思案を定《さだ》めた。</td>
+</tr>
+<tr  nrec="233" id="rid_233">
+<td colspan="4" nrec="233" hits_status="0">そこでおとなしく「君などは年が年であるから大分《だいぶん》とったろう」とそそのかして見た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="234" id="rid_234">
+<td colspan="4" nrec="234" hits_status="0">果然彼は墻壁《しょうへき》の欠所《けっしょ》に吶喊《とっかん》して来た。</td>
+</tr>
+<tr  nrec="235" id="rid_235">
+<td colspan="4" nrec="235" hits_status="0">「たんとでもねえが三四十はとったろう」とは得意気なる彼の答であった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="236" id="rid_236">
+<td colspan="4" nrec="236" hits_status="0">彼はなお語をつづけて「鼠の百や二百は一人でいつでも引き受けるがいたち［＃「いたち」に傍点］ってえ奴は手に合わねえ。</td>
+</tr>
+<tr  nrec="237" id="rid_237">
+<td colspan="4" nrec="237" hits_status="0">一度いたち［＃「いたち」に傍点］に向って酷《ひど》い目に逢《あ》った」「へえなるほど」と相槌《あいづち》を打つ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="238" id="rid_238">
+<td colspan="4" nrec="238" hits_status="0">黒は大きな眼をぱちつかせて云う。</td>
+</tr>
+<tr  nrec="239" id="rid_239">
+<td colspan="4" nrec="239" hits_status="0">「去年の大掃除の時だ。うちの亭主が石灰《いしばい》の袋を持って椽《えん》の下へ這《は》い込んだら御めえ［＃「御めえ」に傍点］大きないたち［＃「いたち」に傍点］の野郎が面喰《めんくら》って飛び出したと思いねえ」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="240" id="rid_240">
+<td colspan="4" nrec="240" hits_status="0">「ふん」と感心して見せる。</td>
+</tr>
+<tr  nrec="241" id="rid_241">
+<td colspan="4" nrec="241" hits_status="0">「いたち［＃「いたち」に傍点］ってけども何鼠の少し大きいぐれえのものだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="242" id="rid_242">
+<td colspan="4" nrec="242" hits_status="0">こん畜生《ちきしょう》って気で追っかけてとうとう泥溝《どぶ》の中へ追い込んだと思いねえ」「うまくやったね」と喝采《かっさい》してやる。</td>
+</tr>
+<tr  nrec="243" id="rid_243">
+<td colspan="4" nrec="243" hits_status="0">「ところが御めえ［＃「御めえ」に傍点］いざってえ段になると奴め最後《さいご》っ屁《ぺ》をこきゃがった。臭《くせ》えの臭くねえのってそれからってえものはいたち［＃「いたち」に傍点］を見ると胸が悪くならあ」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="244" id="rid_244">
+<td colspan="4" nrec="244" hits_status="0">彼はここに至ってあたかも去年の臭気を今《いま》なお感ずるごとく前足を揚げて鼻の頭を二三遍なで廻わした。</td>
+</tr>
+<tr  nrec="245" id="rid_245">
+<td colspan="4" nrec="245" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>も少々気の毒な感じがする。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="246" id="rid_246">
+<td colspan="4" nrec="246" hits_status="0">ちっと景気を付けてやろうと思って「しかし鼠なら君に睨《にら》まれては百年目だろう。君はあまり鼠を捕《と》るのが名人で鼠ばかり食うものだからそんなに肥って色つやが善いのだろう」黒の御機嫌をとるためのこの質問は不思議にも反対の結果を呈出《ていしゅつ》した。</td>
+</tr>
+<tr  nrec="247" id="rid_247">
+<td colspan="4" nrec="247" hits_status="0">彼は喟然《きぜん》として大息《たいそく》していう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="248" id="rid_248">
+<td colspan="4" nrec="248" hits_status="1">「考《かん》げえるとつまらねえ。いくら稼いで鼠をとったって——一てえ<span class="word_view_span" style="color:red;">人間</span>ほどふてえ奴は世の中にいねえぜ。人のとった鼠をみんな取り上げやがって交番へ持って行きゃあがる。交番じゃ誰が捕《と》ったか分らねえからそのたんび［＃「たんび」に傍点］に五銭ずつくれるじゃねえか。うちの亭主なんか己《おれ》の御蔭でもう壱円五十銭くらい儲《もう》けていやがる癖に、碌《ろく》なものを食わせた事もありゃしねえ。おい<span class="word_view_span" style="color:red;">人間</span>てものあ体《てい》の善《い》い泥棒だぜ」</td>
+</tr>
+<tr  nrec="249" id="rid_249">
+<td colspan="4" nrec="249" hits_status="0">さすが無学の黒もこのくらいの理窟《りくつ》はわかると見えてすこぶる怒《おこ》った容子《ようす》で背中の毛を逆立《さかだ》てている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="250" id="rid_250">
+<td colspan="4" nrec="250" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は少々気味が悪くなったから善い加減にその場を胡魔化《ごまか》して家《うち》へ帰った。</td>
+</tr>
+<tr  nrec="251" id="rid_251">
+<td colspan="4" nrec="251" hits_status="1">この時から<span class="word_view_span" style="color:red;">吾輩</span>は決して鼠をとるまいと決心した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="252" id="rid_252">
+<td colspan="4" nrec="252" hits_status="0">しかし黒の子分になって鼠以外の御馳走を猟《あさ》ってあるく事もしなかった。</td>
+</tr>
+<tr  nrec="253" id="rid_253">
+<td colspan="4" nrec="253" hits_status="0">御馳走を食うよりも寝ていた方が気楽でいい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="254" id="rid_254">
+<td colspan="4" nrec="254" hits_status="0">教師の家《うち》にいると猫も教師のような性質になると見える。</td>
+</tr>
+<tr  nrec="255" id="rid_255">
+<td colspan="4" nrec="255" hits_status="0">要心しないと今に胃弱になるかも知れない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="256" id="rid_256">
+<td colspan="4" nrec="256" hits_status="1">教師といえば<span class="word_view_span" style="color:red;">吾輩</span>の主人も近頃に至っては到底《とうてい》水彩画において望《のぞみ》のない事を悟ったものと見えて十二月一日の日記にこんな事をかきつけた。</td>
+</tr>
+<tr  nrec="257" id="rid_257">
+<td colspan="4" nrec="257" hits_status="0">○○と云う人に今日の会で始めて出逢《であ》った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="258" id="rid_258">
+<td colspan="4" nrec="258" hits_status="0">あの人は大分《だいぶ》放蕩《ほうとう》をした人だと云うがなるほど通人《つうじん》らしい風采《ふうさい》をしている。</td>
+</tr>
+<tr  nrec="259" id="rid_259">
+<td colspan="4" nrec="259" hits_status="0">こう云う質《たち》の人は女に好かれるものだから○○が放蕩をしたと云うよりも放蕩をするべく余儀なくせられたと云うのが適当であろう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="260" id="rid_260">
+<td colspan="4" nrec="260" hits_status="0">あの人の妻君は芸者だそうだ、羨《うらや》ましい事である。</td>
+</tr>
+<tr  nrec="261" id="rid_261">
+<td colspan="4" nrec="261" hits_status="0">元来放蕩家を悪くいう人の大部分は放蕩をする資格のないものが多い。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="262" id="rid_262">
+<td colspan="4" nrec="262" hits_status="0">また放蕩家をもって自任する連中のうちにも、放蕩する資格のないものが多い。</td>
+</tr>
+<tr  nrec="263" id="rid_263">
+<td colspan="4" nrec="263" hits_status="0">これらは余儀なくされないのに無理に進んでやるのである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="264" id="rid_264">
+<td colspan="4" nrec="264" hits_status="1">あたかも<span class="word_view_span" style="color:red;">吾輩</span>の水彩画に於けるがごときもので到底卒業する気づかいはない。</td>
+</tr>
+<tr  nrec="265" id="rid_265">
+<td colspan="4" nrec="265" hits_status="0">しかるにも関せず、自分だけは通人だと思って済《すま》している。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="266" id="rid_266">
+<td colspan="4" nrec="266" hits_status="1">料理屋の酒を飲んだり待合へ這入《はい》るから通人となり得るという論が立つなら、<span class="word_view_span" style="color:red;">吾輩</span>も一廉《ひとかど》の水彩画家になり得る理窟《りくつ》だ。</td>
+</tr>
+<tr  nrec="267" id="rid_267">
+<td colspan="4" nrec="267" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>の水彩画のごときはかかない方がましであると同じように、愚昧《ぐまい》なる通人よりも山出しの大野暮《おおやぼ》の方が遥《はる》かに上等だ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="268" id="rid_268">
+<td colspan="4" nrec="268" hits_status="0">通人論《つうじんろん》はちょっと首肯《しゅこう》しかねる。</td>
+</tr>
+<tr  nrec="269" id="rid_269">
+<td colspan="4" nrec="269" hits_status="0">また芸者の妻君を羨しいなどというところは教師としては口にすべからざる愚劣の考であるが、自己の水彩画における批評眼だけはたしかなものだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="270" id="rid_270">
+<td colspan="4" nrec="270" hits_status="0">主人はかくのごとく自知《じち》の明《めい》あるにも関せずその自惚心《うぬぼれしん》はなかなか抜けない。</td>
+</tr>
+<tr  nrec="271" id="rid_271">
+<td colspan="4" nrec="271" hits_status="0">中二日《なかふつか》置いて十二月四日の日記にこんな事を書いている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="272" id="rid_272">
+<td colspan="4" nrec="272" hits_status="0">昨夜《ゆうべ》は僕が水彩画をかいて到底物にならんと思って、そこらに抛《ほう》って置いたのを誰かが立派な額にして欄間《らんま》に懸《か》けてくれた夢を見た。</td>
+</tr>
+<tr  nrec="273" id="rid_273">
+<td colspan="4" nrec="273" hits_status="0">さて額になったところを見ると我ながら急に上手になった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="274" id="rid_274">
+<td colspan="4" nrec="274" hits_status="0">非常に嬉しい。</td>
+</tr>
+<tr  nrec="275" id="rid_275">
+<td colspan="4" nrec="275" hits_status="0">これなら立派なものだと独《ひと》りで眺め暮らしていると、夜が明けて眼が覚《さ》めてやはり元の通り下手である事が朝日と共に明瞭になってしまった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="276" id="rid_276">
+<td colspan="4" nrec="276" hits_status="0">主人は夢の裡《うち》まで水彩画の未練を背負《しょ》ってあるいていると見える。</td>
+</tr>
+<tr  nrec="277" id="rid_277">
+<td colspan="4" nrec="277" hits_status="0">これでは水彩画家は無論｜夫子《ふうし》の所謂《いわゆる》通人にもなれない質《たち》だ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="278" id="rid_278">
+<td colspan="4" nrec="278" hits_status="0">主人が水彩画を夢に見た翌日例の金縁｜眼鏡《めがね》の美学者が久し振りで主人を訪問した。</td>
+</tr>
+<tr  nrec="279" id="rid_279">
+<td colspan="4" nrec="279" hits_status="0">彼は座につくと劈頭《へきとう》第一に「画《え》はどうかね」と口を切った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="280" id="rid_280">
+<td colspan="4" nrec="280" hits_status="0">主人は平気な顔をして「君の忠告に従って写生を力《つと》めているが、なるほど写生をすると今まで気のつかなかった物の形や、色の精細な変化などがよく分るようだ。</td>
+</tr>
+<tr  nrec="281" id="rid_281">
+<td colspan="4" nrec="281" hits_status="0">西洋では昔《むか》しから写生を主張した結果｜今日《こんにち》のように発達したものと思われる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="282" id="rid_282">
+<td colspan="4" nrec="282" hits_status="0">さすがアンドレア・デル・サルトだ」と日記の事はおくび［＃「おくび」に傍点］にも出さないで、またアンドレア・デル・サルトに感心する。</td>
+</tr>
+<tr  nrec="283" id="rid_283">
+<td colspan="4" nrec="283" hits_status="0">美学者は笑いながら「実は君、あれは出鱈目《でたらめ》だよ」と頭を掻《か》く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="284" id="rid_284">
+<td colspan="4" nrec="284" hits_status="0">何が」と主人はまだ※［＃「言＋墟のつくり」、第4水準2-88-74］《いつ》わられた事に気がつかない。</td>
+</tr>
+<tr  nrec="285" id="rid_285">
+<td colspan="4" nrec="285" hits_status="0">「何がって君のしきりに感服しているアンドレア・デル・サルトさ。あれは僕のちょっと捏造《ねつぞう》した話だ。君がそんなに真面目《まじめ》に信じようとは思わなかったハハハハ」と大喜悦の体《てい》である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="286" id="rid_286">
+<td colspan="4" nrec="286" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は椽側でこの対話を聞いて彼の今日の日記にはいかなる事が記《しる》さるるであろうかと予《あらかじ》め想像せざるを得なかった。</td>
+</tr>
+<tr  nrec="287" id="rid_287">
+<td colspan="4" nrec="287" hits_status="0">この美学者はこんな好《いい》加減な事を吹き散らして人を担《かつ》ぐのを唯一の楽《たのしみ》にしている男である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="288" id="rid_288">
+<td colspan="4" nrec="288" hits_status="0">彼はアンドレア・デル・サルト事件が主人の情線《じょうせん》にいかなる響を伝えたかを毫《ごう》も顧慮せざるもののごとく得意になって下《しも》のような事を饒舌《しゃべ》った。</td>
+</tr>
+<tr  nrec="289" id="rid_289">
+<td colspan="4" nrec="289" hits_status="0">「いや時々｜冗談《じょうだん》を言うと人が真《ま》に受けるので大《おおい》に滑稽的《こっけいてき》美感を挑撥《ちょうはつ》するのは面白い。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="290" id="rid_290">
+<td colspan="4" nrec="290" hits_status="0">せんだってある学生にニコラス・ニックルベーがギボンに忠告して彼の一世の大著述なる仏国革命史を仏語で書くのをやめにして英文で出版させたと言ったら、その学生がまた馬鹿に記憶の善い男で、日本文学会の演説会で真面目に僕の話した通りを繰り返したのは滑稽であった。ところがその時の傍聴者は約百名ばかりであったが、皆熱心にそれを傾聴しておった。それからまだ面白い話がある。せんだって或る文学者のいる席でハリソンの歴史小説セオファーノの話《はな》しが出たから僕はあれは歴史小説の中《うち》で白眉《はくび》である。ことに女主人公が死ぬところは鬼気《きき》人を襲うようだと評したら、僕の向うに坐っている知らんと云った事のない先生が、そうそうあすこは実に名文だといった。それで僕はこの男もやはり僕同様この小説を読んでおらないという事を知った」神経胃弱性の主人は眼を丸くして問いかけた。</td>
+</tr>
+<tr  nrec="291" id="rid_291">
+<td colspan="4" nrec="291" hits_status="0">「そんな出鱈目《でたらめ》をいってもし相手が読んでいたらどうするつもりだ」あたかも人を欺《あざむ》くのは差支《さしつかえ》ない、ただ化《ばけ》の皮《かわ》があらわれた時は困るじゃないかと感じたもののごとくである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="292" id="rid_292">
+<td colspan="4" nrec="292" hits_status="0">美学者は少しも動じない。</td>
+</tr>
+<tr  nrec="293" id="rid_293">
+<td colspan="4" nrec="293" hits_status="0">「なにその時《とき》ゃ別の本と間違えたとか何とか云うばかりさ」と云ってけらけら笑っている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="294" id="rid_294">
+<td colspan="4" nrec="294" hits_status="0">この美学者は金縁の眼鏡は掛けているがその性質が車屋の黒に似たところがある。</td>
+</tr>
+<tr  nrec="295" id="rid_295">
+<td colspan="4" nrec="295" hits_status="1">主人は黙って日の出を輪に吹いて<span class="word_view_span" style="color:red;">吾輩</span>にはそんな勇気はないと云わんばかりの顔をしている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="296" id="rid_296">
+<td colspan="4" nrec="296" hits_status="0">美学者はそれだから画《え》をかいても駄目だという目付で「しかし冗談《じょうだん》は冗談だが画というものは実際むずかしいものだよ、レオナルド・ダ・ヴィンチは門下生に寺院の壁のしみ［＃「しみ」に傍点］を写せと教えた事があるそうだ。なるほど雪隠《せついん》などに這入《はい》って雨の漏る壁を余念なく眺めていると、なかなかうまい模様画が自然に出来ているぜ。君注意して写生して見給えきっと面白いものが出来るから」</td>
+</tr>
+<tr  nrec="297" id="rid_297">
+<td colspan="4" nrec="297" hits_status="0">「また欺《だま》すのだろう」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="298" id="rid_298">
+<td colspan="4" nrec="298" hits_status="0">「いえこれだけはたしかだよ。実際奇警な語じゃないか、ダ・ヴィンチでもいいそうな事だあね」「なるほど奇警には相違ないな」と主人は半分降参をした。</td>
+</tr>
+<tr  nrec="299" id="rid_299">
+<td colspan="4" nrec="299" hits_status="0">しかし彼はまだ雪隠で写生はせぬようだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="300" id="rid_300">
+<td colspan="4" nrec="300" hits_status="0">車屋の黒はその後《ご》跛《びっこ》になった。</td>
+</tr>
+<tr  nrec="301" id="rid_301">
+<td colspan="4" nrec="301" hits_status="0">彼の光沢ある毛は漸々《だんだん》色が褪《さ》めて抜けて来る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="302" id="rid_302">
+<td colspan="4" nrec="302" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>が琥珀《こはく》よりも美しいと評した彼の眼には眼脂《めやに》が一杯たまっている。</td>
+</tr>
+<tr  nrec="303" id="rid_303">
+<td colspan="4" nrec="303" hits_status="1">ことに著るしく<span class="word_view_span" style="color:red;">吾輩</span>の注意を惹《ひ》いたのは彼の元気の消沈とその体格の悪くなった事である。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="304" id="rid_304">
+<td colspan="4" nrec="304" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>が例の茶園《ちゃえん》で彼に逢った最後の日、どうだと云って尋ねたら「いたち［＃「いたち」に傍点］の最後屁《さいごっぺ》と肴屋《さかなや》の天秤棒《てんびんぼう》には懲々《こりごり》だ」といった。</td>
+</tr>
+<tr  nrec="305" id="rid_305">
+<td colspan="4" nrec="305" hits_status="0">赤松の間に二三段の紅《こう》を綴った紅葉《こうよう》は昔《むか》しの夢のごとく散ってつくばい［＃「つくばい」に傍点］に近く代る代る花弁《はなびら》をこぼした紅白《こうはく》の山茶花《さざんか》も残りなく落ち尽した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="306" id="rid_306">
+<td colspan="4" nrec="306" hits_status="1">三間半の南向の椽側に冬の日脚が早く傾いて木枯《こがらし》の吹かない日はほとんど稀《まれ》になってから<span class="word_view_span" style="color:red;">吾輩</span>の昼寝の時間も狭《せば》められたような気がする。</td>
+</tr>
+<tr  nrec="307" id="rid_307">
+<td colspan="4" nrec="307" hits_status="0">主人は毎日学校へ行く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="308" id="rid_308">
+<td colspan="4" nrec="308" hits_status="1">帰ると<span class="word_view_span" style="color:red;">書斎</span>へ立て籠《こも》る。</td>
+</tr>
+<tr  nrec="309" id="rid_309">
+<td colspan="4" nrec="309" hits_status="0">人が来ると、教師が厭《いや》だ厭だという。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="310" id="rid_310">
+<td colspan="4" nrec="310" hits_status="0">水彩画も滅多にかかない。</td>
+</tr>
+<tr  nrec="311" id="rid_311">
+<td colspan="4" nrec="311" hits_status="0">タカジヤスターゼも功能がないといってやめてしまった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="312" id="rid_312">
+<td colspan="4" nrec="312" hits_status="0">小供は感心に休まないで幼稚園へかよう。</td>
+</tr>
+<tr  nrec="313" id="rid_313">
+<td colspan="4" nrec="313" hits_status="1">帰ると唱歌を歌って、毬《まり》をついて、時々<span class="word_view_span" style="color:red;">吾輩</span>を尻尾《しっぽ》でぶら下げる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="314" id="rid_314">
+<td colspan="4" nrec="314" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は御馳走《ごちそう》も食わないから別段｜肥《ふと》りもしないが、まずまず健康で跛《びっこ》にもならずにその日その日を暮している。</td>
+</tr>
+<tr  nrec="315" id="rid_315">
+<td colspan="4" nrec="315" hits_status="0">鼠は決して取らない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="316" id="rid_316">
+<td colspan="4" nrec="316" hits_status="0">おさんは未《いま》だに嫌《きら》いである。</td>
+</tr>
+<tr  nrec="317" id="rid_317">
+<td colspan="4" nrec="317" hits_status="0">名前はまだつけてくれないが、欲をいっても際限がないから生涯《しょうがい》この教師の家《うち》で無名の猫で終るつもりだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="318" id="rid_318">
+<td colspan="4" nrec="318" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は新年来多少有名になったので、猫ながらちょっと鼻が高く感ぜらるるのはありがたい。</td>
+</tr>
+<tr  nrec="319" id="rid_319">
+<td colspan="4" nrec="319" hits_status="0">元朝早々主人の許《もと》へ一枚の絵端書《えはがき》が来た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="320" id="rid_320">
+<td colspan="4" nrec="320" hits_status="0">これは彼の交友某画家からの年始状であるが、上部を赤、下部を深緑《ふかみど》りで塗って、その真中に一の動物が蹲踞《うずくま》っているところをパステルで書いてある。</td>
+</tr>
+<tr  nrec="321" id="rid_321">
+<td colspan="4" nrec="321" hits_status="1">主人は例の<span class="word_view_span" style="color:red;">書斎</span>でこの絵を、横から見たり、竪《たて》から眺めたりして、うまい色だなという。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="322" id="rid_322">
+<td colspan="4" nrec="322" hits_status="0">すでに一応感服したものだから、もうやめにするかと思うとやはり横から見たり、竪から見たりしている。</td>
+</tr>
+<tr  nrec="323" id="rid_323">
+<td colspan="4" nrec="323" hits_status="0">からだを拗《ね》じ向けたり、手を延ばして年寄が三世相《さんぜそう》を見るようにしたり、または窓の方へむいて鼻の先まで持って来たりして見ている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="324" id="rid_324">
+<td colspan="4" nrec="324" hits_status="0">早くやめてくれないと膝《ひざ》が揺れて険呑《けんのん》でたまらない。</td>
+</tr>
+<tr  nrec="325" id="rid_325">
+<td colspan="4" nrec="325" hits_status="0">ようやくの事で動揺があまり劇《はげ》しくなくなったと思ったら、小さな声で一体何をかいたのだろうと云《い》う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="326" id="rid_326">
+<td colspan="4" nrec="326" hits_status="0">主人は絵端書の色には感服したが、かいてある動物の正体が分らぬので、さっきから苦心をしたものと見える。</td>
+</tr>
+<tr  nrec="327" id="rid_327">
+<td colspan="4" nrec="327" hits_status="0">そんな分らぬ絵端書かと思いながら、寝ていた眼を上品に半《なか》ば開いて、落ちつき払って見ると紛《まぎ》れもない、自分の肖像だ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="328" id="rid_328">
+<td colspan="4" nrec="328" hits_status="0">主人のようにアンドレア・デル・サルトを極《き》め込んだものでもあるまいが、画家だけに形体も色彩もちゃんと整って出来ている。</td>
+</tr>
+<tr  nrec="329" id="rid_329">
+<td colspan="4" nrec="329" hits_status="0">誰が見たって猫に相違ない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="330" id="rid_330">
+<td colspan="4" nrec="330" hits_status="1">少し眼識のあるものなら、猫の中《うち》でも他《ほか》の猫じゃない<span class="word_view_span" style="color:red;">吾輩</span>である事が判然とわかるように立派に描《か》いてある。</td>
+</tr>
+<tr  nrec="331" id="rid_331">
+<td colspan="4" nrec="331" hits_status="1">このくらい明瞭な事を分らずにかくまで苦心するかと思うと、少し<span class="word_view_span" style="color:red;">人間</span>が気の毒になる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="332" id="rid_332">
+<td colspan="4" nrec="332" hits_status="1">出来る事ならその絵が<span class="word_view_span" style="color:red;">吾輩</span>であると云う事を知らしてやりたい。</td>
+</tr>
+<tr  nrec="333" id="rid_333">
+<td colspan="4" nrec="333" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>であると云う事はよし分らないにしても、せめて猫であるという事だけは分らしてやりたい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="334" id="rid_334">
+<td colspan="4" nrec="334" hits_status="1">しかし<span class="word_view_span" style="color:red;">人間</span>というものは到底《とうてい》<span class="word_view_span" style="color:red;">吾輩</span>｜猫属《ねこぞく》の言語を解し得るくらいに天の恵《めぐみ》に浴しておらん動物であるから、残念ながらそのままにしておいた。</td>
+</tr>
+<tr  nrec="335" id="rid_335">
+<td colspan="4" nrec="335" hits_status="1">ちょっと読者に断っておきたいが、元来<span class="word_view_span" style="color:red;">人間</span>が何ぞというと猫々と、事もなげに軽侮の口調をもって<span class="word_view_span" style="color:red;">吾輩</span>を評価する癖があるははなはだよくない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="336" id="rid_336">
+<td colspan="4" nrec="336" hits_status="1"><span class="word_view_span" style="color:red;">人間</span>の糟《かす》から牛と馬が出来て、牛と馬の糞から猫が製造されたごとく考えるのは、自分の無智に心付かんで高慢な顔をする教師などにはありがちの事でもあろうが、はたから見てあまり見っともいい者じゃない。</td>
+</tr>
+<tr  nrec="337" id="rid_337">
+<td colspan="4" nrec="337" hits_status="0">いくら猫だって、そう粗末簡便には出来ぬ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="338" id="rid_338">
+<td colspan="4" nrec="338" hits_status="1">よそ目には一列一体、平等無差別、どの猫も自家固有の特色などはないようであるが、猫の社会に這入《はい》って見るとなかなか複雑なもので十人｜十色《といろ》という<span class="word_view_span" style="color:red;">人間</span>界の語《ことば》はそのままここにも応用が出来るのである</td>
+</tr>
+<tr  nrec="339" id="rid_339">
+<td colspan="4" nrec="339" hits_status="0">目付でも、鼻付でも、毛並でも、足並でも、みんな違う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="340" id="rid_340">
+<td colspan="4" nrec="340" hits_status="0">髯《ひげ》の張り具合から耳の立ち按排《あんばい》、尻尾《しっぽ》の垂れ加減に至るまで同じものは一つもない。</td>
+</tr>
+<tr  nrec="341" id="rid_341">
+<td colspan="4" nrec="341" hits_status="0">器量、不器量、好き嫌い、粋無粋《すいぶすい》の数《かず》を悉《つ》くして千差万別と云っても差支えないくらいである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="342" id="rid_342">
+<td colspan="4" nrec="342" hits_status="1">そのように判然たる区別が存しているにもかかわらず、<span class="word_view_span" style="color:red;">人間</span>の眼はただ向上とか何とかいって、空ばかり見ているものだから、<span class="word_view_span" style="color:red;">吾輩</span>の性質は無論｜相貌《そうぼう》の末を識別する事すら到底出来ぬのは気の毒だ。</td>
+</tr>
+<tr  nrec="343" id="rid_343">
+<td colspan="4" nrec="343" hits_status="0">同類相求むとは昔《むか》しからある語《ことば》だそうだがその通り、餅屋《もちや》は餅屋、猫は猫で、猫の事ならやはり猫でなくては分らぬ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="344" id="rid_344">
+<td colspan="4" nrec="344" hits_status="1">いくら<span class="word_view_span" style="color:red;">人間</span>が発達したってこればかりは駄目である。</td>
+</tr>
+<tr  nrec="345" id="rid_345">
+<td colspan="4" nrec="345" hits_status="0">いわんや実際をいうと彼等が自《みずか》ら信じているごとくえらくも何ともないのだからなおさらむずかしい。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="346" id="rid_346">
+<td colspan="4" nrec="346" hits_status="1">またいわんや同情に乏しい<span class="word_view_span" style="color:red;">吾輩</span>の主人のごときは、相互を残りなく解するというが愛の第一義であるということすら分らない男なのだから仕方がない。</td>
+</tr>
+<tr  nrec="347" id="rid_347">
+<td colspan="4" nrec="347" hits_status="1">彼は性の悪い牡蠣《かき》のごとく<span class="word_view_span" style="color:red;">書斎</span>に吸い付いて、かつて外界に向って口を開《ひら》いた事がない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="348" id="rid_348">
+<td colspan="4" nrec="348" hits_status="0">それで自分だけはすこぶる達観したような面構《つらがまえ》をしているのはちょっとおかしい。</td>
+</tr>
+<tr  nrec="349" id="rid_349">
+<td colspan="4" nrec="349" hits_status="1">達観しない証拠には現に<span class="word_view_span" style="color:red;">吾輩</span>の肖像が眼の前にあるのに少しも悟った様子もなく今年は征露の第二年目だから大方熊の画《え》だろうなどと気の知れぬことをいってすましているのでもわかる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="350" id="rid_350">
+<td colspan="4" nrec="350" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>が主人の膝《ひざ》の上で眼をねむりながらかく考えていると、やがて下女が第二の絵端書《えはがき》を持って来た。</td>
+</tr>
+<tr  nrec="351" id="rid_351">
+<td colspan="4" nrec="351" hits_status="0">見ると活版で舶来の猫が四五｜疋《ひき》ずらりと行列してペンを握ったり書物を開いたり勉強をしている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="352" id="rid_352">
+<td colspan="4" nrec="352" hits_status="0">その内の一疋は席を離れて机の角で西洋の猫じゃ猫じゃを躍《おど》っている。</td>
+</tr>
+<tr  nrec="353" id="rid_353">
+<td colspan="4" nrec="353" hits_status="1">その上に日本の墨で「<span class="word_view_span" style="color:red;">吾輩</span>は猫である」と黒々とかいて、右の側《わき》に書を読むや躍《おど》るや猫の春一日《はるひとひ》という俳句さえ認《したた》められてある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="354" id="rid_354">
+<td colspan="4" nrec="354" hits_status="0">これは主人の旧門下生より来たので誰が見たって一見して意味がわかるはずであるのに、迂濶《うかつ》な主人はまだ悟らないと見えて不思議そうに首を捻《ひね》って、はてな今年は猫の年かなと独言《ひとりごと》を言った。</td>
+</tr>
+<tr  nrec="355" id="rid_355">
+<td colspan="4" nrec="355" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>がこれほど有名になったのを未《ま》だ気が着かずにいると見える。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="356" id="rid_356">
+<td colspan="4" nrec="356" hits_status="0">ところへ下女がまた第三の端書を持ってくる。</td>
+</tr>
+<tr  nrec="357" id="rid_357">
+<td colspan="4" nrec="357" hits_status="0">今度は絵端書ではない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="358" id="rid_358">
+<td colspan="4" nrec="358" hits_status="0">恭賀新年とかいて、傍《かたわ》らに乍恐縮《きょうしゅくながら》かの猫へも宜《よろ》しく御伝声《ごでんせい》奉願上候《ねがいあげたてまつりそろ》とある。</td>
+</tr>
+<tr  nrec="359" id="rid_359">
+<td colspan="4" nrec="359" hits_status="1">いかに迂遠《うえん》な主人でもこう明らさまに書いてあれば分るものと見えてようやく気が付いたようにフンと言いながら<span class="word_view_span" style="color:red;">吾輩</span>の顔を見た。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="360" id="rid_360">
+<td colspan="4" nrec="360" hits_status="0">その眼付が今までとは違って多少尊敬の意を含んでいるように思われた。</td>
+</tr>
+<tr  nrec="361" id="rid_361">
+<td colspan="4" nrec="361" hits_status="1">今まで世間から存在を認められなかった主人が急に一個の新面目《しんめんぼく》を施こしたのも、全く<span class="word_view_span" style="color:red;">吾輩</span>の御蔭だと思えばこのくらいの眼付は至当だろうと考える。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="362" id="rid_362">
+<td colspan="4" nrec="362" hits_status="0">おりから門の格子《こうし》がチリン、チリン、チリリリリンと鳴る。</td>
+</tr>
+<tr  nrec="363" id="rid_363">
+<td colspan="4" nrec="363" hits_status="0">大方来客であろう、来客なら下女が取次に出る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="364" id="rid_364">
+<td colspan="4" nrec="364" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>は肴屋《さかなや》の梅公がくる時のほかは出ない事に極《き》めているのだから、平気で、もとのごとく主人の膝に坐っておった。</td>
+</tr>
+<tr  nrec="365" id="rid_365">
+<td colspan="4" nrec="365" hits_status="0">すると主人は高利貸にでも飛び込まれたように不安な顔付をして玄関の方を見る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="366" id="rid_366">
+<td colspan="4" nrec="366" hits_status="0">何でも年賀の客を受けて酒の相手をするのが厭らしい。</td>
+</tr>
+<tr  nrec="367" id="rid_367">
+<td colspan="4" nrec="367" hits_status="1"><span class="word_view_span" style="color:red;">人間</span>もこのくらい偏屈《へんくつ》になれば申し分はない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="368" id="rid_368">
+<td colspan="4" nrec="368" hits_status="0">そんなら早くから外出でもすればよいのにそれほどの勇気も無い。</td>
+</tr>
+<tr  nrec="369" id="rid_369">
+<td colspan="4" nrec="369" hits_status="0">いよいよ牡蠣の根性《こんじょう》をあらわしている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="370" id="rid_370">
+<td colspan="4" nrec="370" hits_status="0">しばらくすると下女が来て寒月《かんげつ》さんがおいでになりましたという。</td>
+</tr>
+<tr  nrec="371" id="rid_371">
+<td colspan="4" nrec="371" hits_status="0">この寒月という男はやはり主人の旧門下生であったそうだが、今では学校を卒業して、何でも主人より立派になっているという話《はな》しである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="372" id="rid_372">
+<td colspan="4" nrec="372" hits_status="0">この男がどういう訳か、よく主人の所へ遊びに来る。</td>
+</tr>
+<tr  nrec="373" id="rid_373">
+<td colspan="4" nrec="373" hits_status="0">来ると自分を恋《おも》っている女が有りそうな、無さそうな、世の中が面白そうな、つまらなそうな、凄《すご》いような艶《つや》っぽいような文句ばかり並べては帰る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="374" id="rid_374">
+<td colspan="4" nrec="374" hits_status="1">主人のようなしなびかけた<span class="word_view_span" style="color:red;">人間</span>を求めて、わざわざこんな話しをしに来るのからして合点《がてん》が行かぬが、あの牡蠣的《かきてき》主人がそんな談話を聞いて時々｜相槌《あいづち》を打つのはなお面白い。</td>
+</tr>
+<tr  nrec="375" id="rid_375">
+<td colspan="4" nrec="375" hits_status="0">「しばらく御無沙汰をしました。実は去年の暮から大《おおい》に活動しているものですから、出《で》よう出ようと思っても、ついこの方角へ足が向かないので」と羽織の紐《ひも》をひねくりながら謎《なぞ》見たような事をいう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="376" id="rid_376">
+<td colspan="4" nrec="376" hits_status="0">「どっちの方角へ足が向くかね」と主人は真面目な顔をして、黒木綿《くろもめん》の紋付羽織の袖口《そでぐち》を引張る。</td>
+</tr>
+<tr  nrec="377" id="rid_377">
+<td colspan="4" nrec="377" hits_status="0">この羽織は木綿でゆき［＃「ゆき」に傍点］が短かい、下からべんべら者が左右へ五分くらいずつはみ出している。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="378" id="rid_378">
+<td colspan="4" nrec="378" hits_status="0">「エヘヘヘ少し違った方角で」と寒月君が笑う。</td>
+</tr>
+<tr  nrec="379" id="rid_379">
+<td colspan="4" nrec="379" hits_status="0">見ると今日は前歯が一枚欠けている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="380" id="rid_380">
+<td colspan="4" nrec="380" hits_status="0">「君歯をどうかしたかね」と主人は問題を転じた。</td>
+</tr>
+<tr  nrec="381" id="rid_381">
+<td colspan="4" nrec="381" hits_status="0">「ええ実はある所で椎茸《しいたけ》を食いましてね」「何を食ったって？」「その、少し椎茸を食ったんで。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="382" id="rid_382">
+<td colspan="4" nrec="382" hits_status="0">椎茸の傘《かさ》を前歯で噛み切ろうとしたらぼろりと歯が欠けましたよ」「椎茸で前歯がかけるなんざ、何だか爺々臭《じじいくさ》いね。</td>
+</tr>
+<tr  nrec="383" id="rid_383">
+<td colspan="4" nrec="383" hits_status="1">俳句にはなるかも知れないが、恋にはならんようだな」と平手で<span class="word_view_span" style="color:red;">吾輩</span>の頭を軽《かろ》く叩く。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="384" id="rid_384">
+<td colspan="4" nrec="384" hits_status="1">「ああその猫が例のですか、なかなか肥ってるじゃありませんか、それなら車屋の黒にだって負けそうもありませんね、立派なものだ」と寒月君は大《おおい》に<span class="word_view_span" style="color:red;">吾輩</span>を賞《ほ》める。</td>
+</tr>
+<tr  nrec="385" id="rid_385">
+<td colspan="4" nrec="385" hits_status="0">「近頃｜大分《だいぶ》大きくなったのさ」と自慢そうに頭をぽかぽかなぐる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="386" id="rid_386">
+<td colspan="4" nrec="386" hits_status="0">賞められたのは得意であるが頭が少々痛い。</td>
+</tr>
+<tr  nrec="387" id="rid_387">
+<td colspan="4" nrec="387" hits_status="0">「一昨夜もちょいと合奏会をやりましてね」と寒月君はまた話しをもとへ戻す。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="388" id="rid_388">
+<td colspan="4" nrec="388" hits_status="0">「どこで」</td>
+</tr>
+<tr  nrec="389" id="rid_389">
+<td colspan="4" nrec="389" hits_status="0">「どこでもそりゃ御聞きにならんでもよいでしょう。ヴァイオリンが三｜挺《ちょう》とピヤノの伴奏でなかなか面白かったです。ヴァイオリンも三挺くらいになると下手でも聞かれるものですね。二人は女で私《わたし》がその中へまじりましたが、自分でも善く弾《ひ》けたと思いました」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="390" id="rid_390">
+<td colspan="4" nrec="390" hits_status="0">「ふん、そしてその女というのは何者かね」と主人は羨《うらや》ましそうに問いかける。</td>
+</tr>
+<tr  nrec="391" id="rid_391">
+<td colspan="4" nrec="391" hits_status="0">元来主人は平常｜枯木寒巌《こぼくかんがん》のような顔付はしているものの実のところは決して婦人に冷淡な方ではない、かつて西洋の或る小説を読んだら、その中にある一人物が出て来て、それが大抵の婦人には必ずちょっと惚《ほ》れる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="392" id="rid_392">
+<td colspan="4" nrec="392" hits_status="0">勘定をして見ると往来を通る婦人の七割弱［＃「七割弱」に傍点］には恋着《れんちゃく》するという事が諷刺的《ふうしてき》に書いてあったのを見て、これは真理だと感心したくらいな男である。</td>
+</tr>
+<tr  nrec="393" id="rid_393">
+<td colspan="4" nrec="393" hits_status="1">そんな浮気な男が何故《なぜ》牡蠣的生涯を送っているかと云うのは<span class="word_view_span" style="color:red;">吾輩</span>猫などには到底《とうてい》分らない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="394" id="rid_394">
+<td colspan="4" nrec="394" hits_status="0">或人は失恋のためだとも云うし、或人は胃弱のせいだとも云うし、また或人は金がなくて臆病な性質《たち》だからだとも云う。</td>
+</tr>
+<tr  nrec="395" id="rid_395">
+<td colspan="4" nrec="395" hits_status="0">どっちにしたって明治の歴史に関係するほどな人物でもないのだから構わない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="396" id="rid_396">
+<td colspan="4" nrec="396" hits_status="0">しかし寒月君の女連《おんなづ》れを羨まし気《げ》に尋ねた事だけは事実である。</td>
+</tr>
+<tr  nrec="397" id="rid_397">
+<td colspan="4" nrec="397" hits_status="0">寒月君は面白そうに口取《くちとり》の蒲鉾《かまぼこ》を箸で挟んで半分前歯で食い切った。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="398" id="rid_398">
+<td colspan="4" nrec="398" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>はまた欠けはせぬかと心配したが今度は大丈夫であった。</td>
+</tr>
+<tr  nrec="399" id="rid_399">
+<td colspan="4" nrec="399" hits_status="0">「なに二人とも去《さ》る所の令嬢ですよ、御存じの方《かた》じゃありません」と余所余所《よそよそ》しい返事をする。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="400" id="rid_400">
+<td colspan="4" nrec="400" hits_status="0">「ナール」と主人は引張ったが「ほど」を略して考えている。</td>
+</tr>
+<tr  nrec="401" id="rid_401">
+<td colspan="4" nrec="401" hits_status="0">寒月君はもう善《い》い加減な時分だと思ったものか「どうも好い天気ですな、御閑《おひま》ならごいっしょに散歩でもしましょうか、旅順が落ちたので市中は大変な景気ですよ」と促《うな》がして見る。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="402" id="rid_402">
+<td colspan="4" nrec="402" hits_status="0">主人は旅順の陥落より女連《おんなづれ》の身元を聞きたいと云う顔で、しばらく考え込んでいたがようやく決心をしたものと見えて「それじゃ出るとしよう」と思い切って立つ。</td>
+</tr>
+<tr  nrec="403" id="rid_403">
+<td colspan="4" nrec="403" hits_status="0">やはり黒木綿の紋付羽織に、兄の紀念《かたみ》とかいう二十年来｜着古《きふ》るした結城紬《ゆうきつむぎ》の綿入を着たままである。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="404" id="rid_404">
+<td colspan="4" nrec="404" hits_status="0">いくら結城紬が丈夫だって、こう着つづけではたまらない。</td>
+</tr>
+<tr  nrec="405" id="rid_405">
+<td colspan="4" nrec="405" hits_status="0">所々が薄くなって日に透かして見ると裏からつぎ［＃「つぎ」に傍点］を当てた針の目が見える。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="406" id="rid_406">
+<td colspan="4" nrec="406" hits_status="0">主人の服装には師走《しわす》も正月もない。</td>
+</tr>
+<tr  nrec="407" id="rid_407">
+<td colspan="4" nrec="407" hits_status="0">ふだん着も余所《よそ》ゆきもない。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="408" id="rid_408">
+<td colspan="4" nrec="408" hits_status="0">出るときは懐手《ふところで》をしてぶらりと出る。</td>
+</tr>
+<tr  nrec="409" id="rid_409">
+<td colspan="4" nrec="409" hits_status="1">ほかに着る物がないからか、有っても面倒だから着換えないのか、<span class="word_view_span" style="color:red;">吾輩</span>には分らぬ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="410" id="rid_410">
+<td colspan="4" nrec="410" hits_status="0">ただしこれだけは失恋のためとも思われない。</td>
+</tr>
+<tr  nrec="411" id="rid_411">
+<td colspan="4" nrec="411" hits_status="1">両人《ふたり》が出て行ったあとで、<span class="word_view_span" style="color:red;">吾輩</span>はちょっと失敬して寒月君の食い切った蒲鉾《かまぼこ》の残りを頂戴《ちょうだい》した。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="412" id="rid_412">
+<td colspan="4" nrec="412" hits_status="1"><span class="word_view_span" style="color:red;">吾輩</span>もこの頃では普通一般の猫ではない。</td>
+</tr>
+<tr  nrec="413" id="rid_413">
+<td colspan="4" nrec="413" hits_status="0">まず桃川如燕《ももかわじょえん》以後の猫か、グレーの金魚を偸《ぬす》んだ猫くらいの資格は充分あると思う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="414" id="rid_414">
+<td colspan="4" nrec="414" hits_status="0">車屋の黒などは固《もと》より眼中にない。</td>
+</tr>
+<tr  nrec="415" id="rid_415">
+<td colspan="4" nrec="415" hits_status="0">蒲鉾の一切《ひときれ》くらい頂戴したって人からかれこれ云われる事もなかろう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="416" id="rid_416">
+<td colspan="4" nrec="416" hits_status="0">それにこの人目を忍んで間食《かんしょく》をするという癖は、何も吾等猫族に限った事ではない。</td>
+</tr>
+<tr  nrec="417" id="rid_417">
+<td colspan="4" nrec="417" hits_status="0">うちの御三《おさん》などはよく細君の留守中に餅菓子などを失敬しては頂戴し、頂戴しては失敬している。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="418" id="rid_418">
+<td colspan="4" nrec="418" hits_status="0">御三ばかりじゃない現に上品な仕付《しつけ》を受けつつあると細君から吹聴《ふいちょう》せられている小児《こども》ですらこの傾向がある。</td>
+</tr>
+<tr  nrec="419" id="rid_419">
+<td colspan="4" nrec="419" hits_status="0">四五日前のことであったが、二人の小供が馬鹿に早くから眼を覚まして、まだ主人夫婦の寝ている間に対《むか》い合うて食卓に着いた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="420" id="rid_420">
+<td colspan="4" nrec="420" hits_status="0">彼等は毎朝主人の食う麺麭《パン》の幾分に、砂糖をつけて食うのが例であるが、この日はちょうど砂糖壺《さとうつぼ》が卓《たく》の上に置かれて匙《さじ》さえ添えてあった。</td>
+</tr>
+<tr  nrec="421" id="rid_421">
+<td colspan="4" nrec="421" hits_status="0">いつものように砂糖を分配してくれるものがないので、大きい方がやがて壺の中から一匙《ひとさじ》の砂糖をすくい出して自分の皿の上へあけた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="422" id="rid_422">
+<td colspan="4" nrec="422" hits_status="0">すると小さいのが姉のした通り同分量の砂糖を同方法で自分の皿の上にあけた。</td>
+</tr>
+<tr  nrec="423" id="rid_423">
+<td colspan="4" nrec="423" hits_status="0">少《しば》らく両人《りょうにん》は睨《にら》み合っていたが、大きいのがまた匙をとって一杯をわが皿の上に加えた。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="424" id="rid_424">
+<td colspan="4" nrec="424" hits_status="0">小さいのもすぐ匙をとってわが分量を姉と同一にした。</td>
+</tr>
+<tr  nrec="425" id="rid_425">
+<td colspan="4" nrec="425" hits_status="0">すると姉がまた一杯すくった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="426" id="rid_426">
+<td colspan="4" nrec="426" hits_status="0">妹も負けずに一杯を附加した。</td>
+</tr>
+<tr  nrec="427" id="rid_427">
+<td colspan="4" nrec="427" hits_status="0">姉がまた壺へ手を懸ける、妹がまた匙をとる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="428" id="rid_428">
+<td colspan="4" nrec="428" hits_status="0">見ている間《ま》に一杯一杯一杯と重なって、ついには両人《ふたり》の皿には山盛の砂糖が堆《うずたか》くなって、壺の中には一匙の砂糖も余っておらんようになったとき、主人が寝ぼけ眼《まなこ》を擦《こす》りながら寝室を出て来てせっかくしゃくい出した砂糖を元のごとく壺の中へ入れてしまった。</td>
+</tr>
+<tr  nrec="429" id="rid_429">
+<td colspan="4" nrec="429" hits_status="1">こんなところを見ると、<span class="word_view_span" style="color:red;">人間</span>は利己主義から割り出した公平という念は猫より優《まさ》っているかも知れぬが、智慧《ちえ》はかえって猫より劣っているようだ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="430" id="rid_430">
+<td colspan="4" nrec="430" hits_status="1">そんなに山盛にしないうちに早く甞《な》めてしまえばいいにと思ったが、例のごとく、<span class="word_view_span" style="color:red;">吾輩</span>の言う事などは通じないのだから、気の毒ながら御櫃《おはち》の上から黙って見物していた。</td>
+</tr>
+<tr  nrec="431" id="rid_431">
+<td colspan="4" nrec="431" hits_status="0">　寒月君と出掛けた主人はどこをどう歩行《ある》いたものか、その晩遅く帰って来て、翌日食卓に就《つ》いたのは九時頃であった。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="432" id="rid_432">
+<td colspan="4" nrec="432" hits_status="0">例の御櫃の上から拝見していると、主人はだまって雑煮《ぞうに》を食っている。</td>
+</tr>
+<tr  nrec="433" id="rid_433">
+<td colspan="4" nrec="433" hits_status="0">代えては食い、代えては食う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="434" id="rid_434">
+<td colspan="4" nrec="434" hits_status="0">餅の切れは小さいが、何でも六切《むきれ》か七切《ななきれ》食って、最後の一切れを椀の中へ残して、もうよそうと箸《はし》を置いた。</td>
+</tr>
+<tr  nrec="435" id="rid_435">
+<td colspan="4" nrec="435" hits_status="0">他人がそんな我儘《わがまま》をすると、なかなか承知しないのであるが、主人の威光を振り廻わして得意なる彼は、濁った汁の中に焦《こ》げ爛《ただ》れた餅の死骸を見て平気ですましている。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="436" id="rid_436">
+<td colspan="4" nrec="436" hits_status="0">妻君が袋戸《ふくろど》の奥からタカジヤスターゼを出して卓の上に置くと、主人は「それは利《き》かないから飲まん」という。</td>
+</tr>
+<tr  nrec="437" id="rid_437">
+<td colspan="4" nrec="437" hits_status="0">「でもあなた澱粉質《でんぷんしつ》のものには大変功能があるそうですから、召し上ったらいいでしょう」と飲ませたがる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="438" id="rid_438">
+<td colspan="4" nrec="438" hits_status="0">「澱粉だろうが何だろうが駄目だよ」と頑固《がんこ》に出る。</td>
+</tr>
+<tr  nrec="439" id="rid_439">
+<td colspan="4" nrec="439" hits_status="0">「あなたはほんとに厭《あ》きっぽい」と細君が独言《ひとりごと》のようにいう。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="440" id="rid_440">
+<td colspan="4" nrec="440" hits_status="0">「厭きっぽいのじゃない薬が利かんのだ」</td>
+</tr>
+<tr  nrec="441" id="rid_441">
+<td colspan="4" nrec="441" hits_status="0">「それだってせんだってじゅうは大変によく利くよく利くとおっしゃって毎日毎日上ったじゃありませんか」</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="442" id="rid_442">
+<td colspan="4" nrec="442" hits_status="0">「こないだうちは利いたのだよ、この頃は利かないのだよ」と対句《ついく》のような返事をする。</td>
+</tr>
+<tr  nrec="443" id="rid_443">
+<td colspan="4" nrec="443" hits_status="0">「そんなに飲んだり止《や》めたりしちゃ、いくら功能のある薬でも利く気遣《きづか》いはありません、もう少し辛防《しんぼう》がよくなくっちゃあ胃弱なんぞはほかの病気たあ違って直らないわねえ」とお盆を持って控えた御三《おさん》を顧みる。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="444" id="rid_444">
+<td colspan="4" nrec="444" hits_status="0">「それは本当のところでございます。</td>
+</tr>
+<tr  nrec="445" id="rid_445">
+<td colspan="4" nrec="445" hits_status="0">もう少し召し上ってご覧にならないと、とても善《よ》い薬か悪い薬かわかりますまい」と御三は一も二もなく細君の肩を持つ。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="446" id="rid_446">
+<td colspan="4" nrec="446" hits_status="0">「何でもいい、飲まんのだから飲まんのだ、女なんかに何がわかるものか、黙っていろ」</td>
+</tr>
+<tr  nrec="447" id="rid_447">
+<td colspan="4" nrec="447" hits_status="0">「どうせ女ですわ」と細君がタカジヤスターゼを主人の前へ突き付けて是非｜詰腹《つめばら》を切らせようとする。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="448" id="rid_448">
+<td colspan="4" nrec="448" hits_status="1">主人は何にも云わず立って<span class="word_view_span" style="color:red;">書斎</span>へ這入《はい》る。</td>
+</tr>
+<tr  nrec="449" id="rid_449">
+<td colspan="4" nrec="449" hits_status="0">細君と御三は顔を見合せてにやにやと笑う。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="450" id="rid_450">
+<td colspan="4" nrec="450" hits_status="1">こんなときに後《あと》からくっ付いて行って膝《ひざ》の上へ乗ると、大変な目に逢《あ》わされるから、そっと庭から廻って<span class="word_view_span" style="color:red;">書斎</span>の椽側へ上《あが》って障子の隙《すき》から覗《のぞ》いて見ると、主人はエピクテタスとか云う人の本を披《ひら》いて見ておった。</td>
+</tr>
+<tr  nrec="451" id="rid_451">
+<td colspan="4" nrec="451" hits_status="0">もしそれが平常《いつも》の通りわかるならちょっとえらいところがある。</td>
+</tr>
+<tr style="background-color:#eeffee;" nrec="452" id="rid_452">
+<td colspan="4" nrec="452" hits_status="0">五六分するとその本を叩《たた》き付けるように机の上へ抛《ほう》り出す。</td>
+</tr>
+<tr  nrec="453" id="rid_453">
+<td colspan="4" nrec="453" hits_status="0">大方そんな事だろうと思いながらなお注意していると、今度は日記帳を出して下《しも》のような事を書きつけた。</td>
+</tr>
+</tbody>
+</table>
+</div>
+  </body>
+</html>
+

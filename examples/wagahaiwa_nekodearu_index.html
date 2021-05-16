@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+  <head>
+    <title>title</title>
+  </head>
+  <body>
+    <h1>テキスト文書の時系列データ分析</h1>
+    入力文書:wagahaiwa_nekodearu.csv
+    <ul>
+      <li>
+	<a href="wagahaiwa_nekodearu.html" target="csv_print_html">CSVの表形式表示</a><br/>
+	指定オプション: --part_color=吾輩,人間,我慢,書斎
+      </li>
+      <li>
+	<a href="wagahaiwa_nekodearu_tl.svg" target="csv_print_html_tl_svg">トピックの時系列表示</a><br/>
+	指定オプション: --columns=date --part_color=吾輩,人間,我慢,書斎 --group_by_part_color --module_figure=wagahaiwa_nekodearu_module.svg:7 --words_map=wagahaiwa_nekodearu_map.txt<br/>
+	各項目をクリックすることで、指定列まとめ表示の該当箇所を表示
+      </li>
+      <li>
+	<a href="wagahaiwa_nekodearu_oia.html" target="csv_print_html_oia">指定列のまとめ表示</a><br/>
+	指定オプション: --part_color=吾輩,人間,我慢,書斎<br/>
+	タイトル行をダブルクリックすることで、検索語句等指定可能
+      </li>
+      <li>
+	<a href="wagahaiwa_nekodearu_tl.html" target="csv_print_html_tl">タイムライン表示</a><br/>
+	指定オプション: --columns=date --part_color=吾輩,人間,我慢,書斎 --group_by_part_color --module_figure=wagahaiwa_nekodearu_module.svg:7 --words_map=wagahaiwa_nekodearu_map.txt
+      </li>
+    </ul>
+  </body>
+</html>
