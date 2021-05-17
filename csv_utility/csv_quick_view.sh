@@ -37,7 +37,7 @@ options:
   -s word: word to search
 
 remark:
-  see folloing
+  see following
   Pretty CSV viewing on the Command Line - Stefaan Lippens inserts content here https://www.stefaanlippens.net/pretty-csv.html
 EOF
     exit 1
