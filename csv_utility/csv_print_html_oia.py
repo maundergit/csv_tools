@@ -437,7 +437,8 @@ def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
                 v, hw = part_color(pcolors, v)
             v = "&nbsp;" if v == "" else v
             html_str += f"<td nowrap=1 rowspan='{n_oia_h}' ondblclick='oia_dblclick_from_td_0()' class='dblclicable'>{v}</td>\n"
-        html_str = re.sub(r"oia_dblclick_from_td_0\(\)", f"oia_dblclick_from_td_0({json.dumps(td_columns)})", html_str)
+        html_str = re.sub(r"oia_dblclick_from_td_0\(\)", f"oia_dblclick_from_td_0({json.dumps(td_columns, ensure_ascii=False)})",
+                          html_str)
         if not check_empty:
             hits_words = {}
             for ic, c in enumerate(oia_columns):
