@@ -201,6 +201,26 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
         text += """
    <script type="text/javascript" src="{}"></script>
    <script type="text/javascript">
+        // クリック時に特殊キーを検知させる http://www.shurey.com/js/samples/1_tips16.html
+        KEY_SHIFT = false;
+        KEY_CTL = false;
+        KEY_ALT = false;
+        KEY_META = false;
+        document.onkeydown = function(event) {{
+                var key_event = event|| window.event;
+                KEY_SHIFT = (key_event.shiftKey);
+                KEY_CTL = (key_event.ctrlKey);
+                KEY_ATL = (key_event.altKey);
+                KEY_META = (key_event.metaKey);
+        }}
+        document.onkeyup = function(event) {{
+                var key_event = event|| window.event;
+                KEY_SHIFT = (key_event.shiftKey);
+                KEY_CTL = (key_event.ctrlKey);
+                KEY_ATL = (key_event.altKey);
+                KEY_META = (key_event.metaKey);
+        }}
+
         function oia_dblclick_from_td_0(val_dic){{
             if(typeof(oia_dblclick_from_td) == "function"){{
                 oia_dblclick_from_td(val_dic);
@@ -471,8 +491,10 @@ def make_oia_handler_template(columns, output_js):
 
 function oia_dblclick_from_td(val_dic){{
    // index: 'nrec' and {columns}    
+   // special key(boolean):
+   //     KEY_SHIFT, KEY_CTL, KEY_ALT, KEY_META
    // enter codes
-   console.log(val_dic);
+   console.log(val_dic, KEY_SHIFT);
    alert("{output_js}を編集してください。");
    // let html_url="test.html";
    // let nrec= val_dic["nrec"]; // record number in csv
