@@ -91,12 +91,12 @@ function make_oia_handler(){
 /* exported */
 
 function oia_dblclick_from_td(val_dic){
-    let html_url="${OUTPUT_OIA_HTML}";
+    console.log(val_dic);
+    let html_url="${OUTPUT_HTML}";
     let nrec= val_dic["nrec"]; // record number in csv
     let id_in_html="rid_"+nrec;
     let url=html_url+"#"+id_in_html;
     window.open(url,"__blank");
-    
 }
 
 //-------------
@@ -164,8 +164,8 @@ remark:
 example 
   csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" wagahaiwa_nekodearu.csv date contente content
   csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" -m "wagahaiwa_nekodearu_module.svg:7" -p wagahaiwa_nekodearu_map.txt wagahaiwa_nekodearu.csv date content
-  csv_print_timeline.sh -a IDX,B,C -c 'this:red' test3.csv  DT O I A
-  csv_print_timeline.sh -a IDX,B,C -c 'this:red' -t '--headline=column' test3.csv  DT O I A
+  csv_print_timeline.sh -a IDX,B,C -c 'this:red' csv_print_html_sample.csv  DT O I A
+  csv_print_timeline.sh -a IDX,B,C -c 'this:red' -t '--headline=IDX' csv_print_html_sample.csv DT O I A
 
 
 EOF
