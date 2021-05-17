@@ -238,7 +238,7 @@ def make_json(df,
         output_df = output_df.append(row, ignore_index=True)
     j_data["events"] = events
 
-    j_str = json.dumps(j_data)
+    j_str = json.dumps(j_data, ensure_ascii=False)
     return j_str, output_df
 
 
@@ -353,7 +353,7 @@ def make_table(ir, row, columns, oia_columns, pcolors):
         v = "&nbsp;" if v == "" else v
         # html_str += f'<tr><td nowrap="1">{c}</td><td>{v}</td></tr>\n'
         html_str += f'<tr><td nowrap="1">{c}</td><td ondblclick="tl_dblclick_from_td_0()">{v}</td></tr>\n'
-    html_str = re.sub(r"tl_dblclick_from_td_0\(\)", f"tl_dblclick_from_td_0({json.dumps(td_columns)})", html_str)
+    html_str = re.sub(r"tl_dblclick_from_td_0\(\)", f"tl_dblclick_from_td_0({json.dumps(td_columns,ensure_ascii=False)})", html_str)
     for ic, c in enumerate(oia_columns):
         v0 = str(row[c])
         v = html.escape(str(v0))
