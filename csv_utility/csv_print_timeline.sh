@@ -39,6 +39,10 @@ function make_index_html(){
 <html>
   <head>
     <title>テキスト文書の時系列データとしての初期分析</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta http-equiv="Expires" content="0">
   </head>
   <body>
     <h1>テキスト文書の時系列データとしての初期分析</h1>
@@ -87,7 +91,7 @@ function make_oia_handler(){
 /* exported */
 
 function oia_dblclick_from_td(val_dic){
-    let html_url="${OUTPUT_OIA_HML}";
+    let html_url="${OUTPUT_OIA_HTML}";
     let nrec= val_dic["nrec"]; // record number in csv
     let id_in_html="rid_"+nrec;
     let url=html_url+"#"+id_in_html;
@@ -107,6 +111,7 @@ EOF
 function triming_svg(){
     echo "-- triming: ${OUTPUT_TL_SVG}" 1>&2
     TMP_SVG=${SNAME}_$$.svg
+    SED_SCR_F=${SNAME}_$$.sed
     cp ${OUTPUT_TL_SVG} ${TMP_SVG}
     SED_SCR=
     while read LINE; do
@@ -120,11 +125,16 @@ function triming_svg(){
 	IDX=${CVS[0]}
 	RID="rid_${IDX}"
 	WORD=${CVS[1]}
-	SED_SCR="${SED_SCR}s/>${WORD}</><a href=\"${OUTPUT_OIA_HTML}#${RID}\" target=\"_blank\">${WORD}<\/a></g;"
+	# SED_SCR="${SED_SCR}s/>${WORD}</><a href=\"${OUTPUT_OIA_HTML}#${RID}\" target=\"_blank\">${WORD}<\/a></g;"
+	echo "s/>${WORD}</><a href=\"${OUTPUT_OIA_HTML}#${RID}\" target=\"_blank\">${WORD}<\/a></g;" >> ${SED_SCR_F}
     done < <((sed '1d' ${OUTPUT_TAGS_TEXT}|sed 's/,/ /g');echo -e "\n")
-    SED_SCR="${SED_SCR}s/<\/g><\/svg>/<\/g><style type='text\/css'>a:hover {font-weight:bold;font-size:110%;}<\/style><\/svg>/;"
-    sed "${SED_SCR}" ${OUTPUT_TL_SVG} ${TMP_SVG} > ${OUTPUT_TL_SVG}
+    # SED_SCR="${SED_SCR}s/<\/g><\/svg>/<\/g><style type='text\/css'>a:hover {font-weight:bold;font-size:110%;}<\/style><\/svg>/;"
+    echo "s/<\/g><\/svg>/<\/g><style type='text\/css'>a:hover {font-weight:bold;font-size:110%;}<\/style><\/svg>/;" >> ${SED_SCR_F}
+    # sed "${SED_SCR}" ${OUTPUT_TL_SVG} ${TMP_SVG} > ${OUTPUT_TL_SVG}
+
+    sed --file=${SED_SCR_F} ${OUTPUT_TL_SVG} ${TMP_SVG} > ${OUTPUT_TL_SVG}
     rm ${TMP_SVG}
+    rm ${SED_SCR_F}
 }
 
 usage_exit() {
@@ -137,10 +147,12 @@ options:
   -d datetime_format: 時刻列の書式
   -m module_figure_option: タイムライン表示に表示される図面情報
   -p words_map_file: タイムライン表示に表示される図面情報と指定語句の対応関係を指定するテキストファイル
+  -t options:  csv_print_html.pyに対する追加オプション
 
   '-a'については'csv_print_html_oia.py --help'の'--columns'の項を参照のこと
   '-c'については'csv_print_html.py --help'又は'csv_print_html_oia.py --help'の'--part_color'の項を参照のこと
   '-d','-m','-p'については'csv_print_html_tl.py --help'の'--datetime_format'、'--module_figure'、'--words_map'の項を参照のこと
+  '-t'については'csv_print_html_tl.py --help'のオプションを参照
 
 remark:
   このツールは、以下のツール群を一括適用するためのシェルスクリプトです。
@@ -153,13 +165,14 @@ example
   csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" wagahaiwa_nekodearu.csv date contente content
   csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" -m "wagahaiwa_nekodearu_module.svg:7" -p wagahaiwa_nekodearu_map.txt wagahaiwa_nekodearu.csv date content
   csv_print_timeline.sh -a IDX,B,C -c 'this:red' test3.csv  DT O I A
+  csv_print_timeline.sh -a IDX,B,C -c 'this:red' -t '--headline=column' test3.csv  DT O I A
 
 
 EOF
     exit 1
 }
 
-while getopts a:c:d:m:p:h OPT
+while getopts a:c:d:m:p:t:h OPT
 do
     case $OPT in
         a)  ACOLUMNS=${OPTARG}
@@ -171,6 +184,8 @@ do
         m)  MODULE_TL=$OPTARG
             ;;
         p)  MAP_TL_TEXT=$OPTARG
+            ;;
+        t)  TL_OPTS_0=$OPTARG
             ;;
         h)  usage_exit
             ;;
@@ -228,6 +243,9 @@ if [ "${MODULE_TL}" != "" ]; then
 fi
 if [ "${MAP_TL_TEXT}" != "" ]; then
     TL_OPTS="${TL_OPTS} --words_map=${MAP_TL_TEXT}"
+fi
+if [ "${TL_OPTS_0}" != "" ]; then
+    TL_OPTS="${TL_OPTS} ${TL_OPTS_0}"
 fi
 
 echo -e "\n-- csv_print_html" 1>&2
