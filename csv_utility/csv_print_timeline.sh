@@ -91,7 +91,7 @@ function make_oia_handler(){
 /* exported */
 
 function oia_dblclick_from_td(val_dic){
-    console.log(val_dic);
+    console.log(val_dic, KEY_SHIFT);
     let html_url="${OUTPUT_HTML}";
     let nrec= val_dic["nrec"]; // record number in csv
     let id_in_html="rid_"+nrec;
