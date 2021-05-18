@@ -450,15 +450,17 @@ def make_table(df, columns, oia_columns, pcolors, space_width="40pm"):
         check_empty = all([v == "" for v in row[oia_columns]])
         n_oia_h = 1 if check_empty else n_oia
         td_columns = {"nrec": ir}
+        html_str_0 = ""
         for c in columns:
             v = html.escape(str(row[c]))
             td_columns[c] = v
             if pcolors is not None and len(pcolors) > 0:
                 v, hw = part_color(pcolors, v)
             v = "&nbsp;" if v == "" else v
-            html_str += f"<td nowrap=1 rowspan='{n_oia_h}' ondblclick='oia_dblclick_from_td_0()' class='dblclicable'>{v}</td>\n"
-        html_str = re.sub(r"oia_dblclick_from_td_0\(\)", f"oia_dblclick_from_td_0({json.dumps(td_columns, ensure_ascii=False)})",
-                          html_str)
+            html_str_0 += f"<td nowrap=1 rowspan='{n_oia_h}' ondblclick='oia_dblclick_from_td_0()' class='dblclicable'>{v}</td>\n"
+        html_str_0 = re.sub(r"oia_dblclick_from_td_0\(\)", f"oia_dblclick_from_td_0({json.dumps(td_columns, ensure_ascii=False)})",
+                            html_str_0)
+        html_str+= html_str
         if not check_empty:
             hits_words = {}
             for ic, c in enumerate(oia_columns):
