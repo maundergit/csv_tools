@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+  <head>
+    <title>テキスト文書の時系列データとしての初期分析</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta http-equiv="Expires" content="0">
+  </head>
+  <body>
+    <h1>テキスト文書の時系列データとしての初期分析</h1>
+    <hr/>
+    入力文書:csv_print_html_sample.csv, レコード数: 3
+    <ul>
+      <li>
+	<a href="csv_print_html_sample.html" target="csv_print_html">CSVの表形式表示</a><br/>
+	指定オプション: --part_color=this:red
+      </li>
+      <li>
+	<a href="csv_print_html_sample_tl.svg" target="csv_print_html_tl_svg">トピックの時系列表示</a><br/>
+	指定オプション: --columns=DT,IDX,B,C --part_color=this:red --group_by_part_color --headline=IDX<br/>
+	各項目をクリックすることで、指定列まとめ表示の該当箇所を表示
+      </li>
+      <li>
+	<a href="csv_print_html_sample_oia.html" target="csv_print_html_oia">指定列のまとめ表示</a><br/>
+	指定オプション: --columns=IDX,B,C --part_color=this:red<br/>
+	タイトル行をダブルクリックすることで、検索語句等指定可能、またOIA列以外の列をダブルクリックすることで、csv_print_html_sample.htmlの該当箇所表示
+      </li>
+      <li>
+	<a href="csv_print_html_sample_tl.html" target="csv_print_html_tl">タイムライン表示</a><br/>
+	指定オプション: --columns=DT,IDX,B,C --part_color=this:red --group_by_part_color --headline=IDX
+      </li>
+    </ul>
+    <hr/>
+    
+    created：20210518T193936 by csv_print_timeline.sh
+  </body>
+</html>

@@ -1,0 +1,9 @@
+@startgantt
+Project starts 2021-7-01
+[ ] starts 2021-7-01 and ends 2021-8-31
+printscale weekly
+-- <size:18><b>this</b></size> --
+[1] happens 2021-07-01
+[2] happens 2021-07-07
+[3] happens 2021-08-07
+@endgantt

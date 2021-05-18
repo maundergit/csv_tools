@@ -1,0 +1,4 @@
+,A,B,C,DT,I,IDX,O,group,image,title_of_image
+0,Action1: nothing to do,A,Sample1,2021-07-01 10:00:00,Investigation1:Atre you there?,1,"Observation1:this is a pen. You can’t position: sticky; a <thead>. Nor a <tr>. But you can sticky a <th>, which means you can make sticky headers inside a regular ol’ <table>. This is tricky stuff, because if you didn’t know this weird quirk, it would be hard to blame you. It makes way more sense to sticky a parent element like the table header rather than each individual element in a row  \^$.*+?()[]{}|",this,pattern.png,sample
+1,Action2: nothing to do,B,Sample2,2021-07-07 10:00:00,Investigation2:Atre you there?,2,Observation2:this is a pen,this,pattern.png,
+2,Action3: nothing to do,C,Sample3,2021-08-07 10:00:00,Investigation3:Atre you there?,3,Observation3:this is a pen,this,pattern.png,
