@@ -147,4 +147,10 @@ JVM: OpenJDK 64-Bit Server VM
 Default Encoding: UTF-8
 Language: ja
 Country: JP
---></g></svg>
+--></g>
+<style type="text/css">
+  a:hover {
+  font-weight:bold;
+  }
+</style>
+</svg>

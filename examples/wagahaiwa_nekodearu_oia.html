@@ -50,6 +50,10 @@
         top: -14px;
         background-color: #e0ffff;
       }
+      td.dblclicable:hover {
+         font-weight:bold;
+         font-size:110%;
+      }
 
       table { 
          margin-left: auto;margin-right: auto;
@@ -103,6 +107,8 @@
         function oia_dblclick_from_td_0(val_dic){
             if(typeof(oia_dblclick_from_td) == "function"){
                 oia_dblclick_from_td(val_dic);
+            } else {
+                alert("リンク先が設定されていません");
             }
         }
    </script>

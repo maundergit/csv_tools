@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <html>
   <head>
-    <title>title</title>
+    <title>テキスト文書の時系列データとしての初期分析</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta http-equiv="Expires" content="0">
   </head>
   <body>
-    <h1>テキスト文書の時系列データ分析</h1>
+    <h1>テキスト文書の時系列データとしての初期分析</h1>
+    <hr/>
     入力文書:wagahaiwa_nekodearu.csv
     <ul>
       <li>
@@ -19,12 +24,15 @@
       <li>
 	<a href="wagahaiwa_nekodearu_oia.html" target="csv_print_html_oia">指定列のまとめ表示</a><br/>
 	指定オプション: --part_color=吾輩,人間,我慢,書斎<br/>
-	タイトル行をダブルクリックすることで、検索語句等指定可能
+	タイトル行をダブルクリックすることで、検索語句等指定可能、またOIA列以外の列をダブルクリックすることで、wagahaiwa_nekodearu.htmlの該当箇所表示
       </li>
       <li>
 	<a href="wagahaiwa_nekodearu_tl.html" target="csv_print_html_tl">タイムライン表示</a><br/>
 	指定オプション: --columns=date --part_color=吾輩,人間,我慢,書斎 --group_by_part_color --module_figure=wagahaiwa_nekodearu_module.svg:7 --words_map=wagahaiwa_nekodearu_map.txt
       </li>
     </ul>
+    <hr/>
+    
+    created：20210517T183151 by csv_print_timeline.sh
   </body>
 </html>

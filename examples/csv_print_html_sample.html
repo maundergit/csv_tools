@@ -1,9 +1,7 @@
-
-<?xml version="1.0" encoding="utf-8"?>
 <html>
   <!-- made by csv_print_html.py -->
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-store">
     <meta http-equiv="Expires" content="0">
@@ -97,6 +95,55 @@
   <body>
 
    <script type="text/javascript">
+        window.onload=function(){
+            if( window.location.hash.length > 0){
+                window.scroll(0,window.scrollY-32);
+            }
+            if( window.location.search.length > 0){
+                let search_string=decodeURI(window.location.search.substring(1));
+                window.find(search_string,false,false,true,false,true);
+            }
+        }
+        function show_nrec_record(nrec,onoff){
+            let tr_objs= document.evaluate("/html//tr[@nrec=\""+nrec+"\"]",document,null,XPathResult.ANY_TYPE, null);
+            let tr_node= tr_objs.iterateNext();
+            while(tr_node){
+                if( onoff ){
+                    tr_node.style.display="";
+                } else {
+                    tr_node.style.display="none";
+                }
+                tr_node= tr_objs.iterateNext();
+            }
+        }
+        function show_nohits_record(obj){
+            if( obj.checked){
+                onoff=true;
+            } else {
+                onoff=false;
+            }
+            let xp_results_0= document.evaluate("/html//td[@hits_status=\"1\"]",document,null,XPathResult.ANY_TYPE, null);
+            let node= xp_results_0.iterateNext();
+            let nrec_hits=[];
+            while( node){
+                let nrec= node.getAttribute("nrec");
+                nrec_hits.push(nrec);
+                show_nrec_record(nrec,true);
+                node= xp_results_0.iterateNext();
+            }
+            show_nrec_record(onoff);
+            let xp_results= document.evaluate("/html//td[@hits_status=\"0\"]",document,null,XPathResult.ANY_TYPE, null);
+            node= xp_results.iterateNext();
+            while( node){
+                let nrec= node.getAttribute("nrec");
+                if( nrec_hits.indexOf(nrec) != -1){
+                    node= xp_results.iterateNext();
+                    continue;
+                }
+                show_nrec_record(nrec, onoff);
+                node= xp_results.iterateNext();
+            }
+        }
         function word_color(word,color_code){
             var nodes= document.getElementsByTagName("td");
             let count=0;
@@ -106,7 +153,11 @@
                 wre= wre.replace(/>/g, '&gt;');
                 let re= new RegExp('(?<!<[^>]*)('+wre+')','gi');
                 nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'<span class="word_view_span" style="color:'+color_code+'">$1</span>');
-                count= count+ (nodes[i].innerHTML.match(re) ||[]).length;
+                count_0= (nodes[i].innerHTML.match(re) ||[]).length;
+                if( count_0 > 0){
+                    nodes[i].setAttribute("hits_status","1");
+                }
+                count= count+ count_0;
             }
             return count;
         }
@@ -117,6 +168,7 @@
                 let re = new RegExp(span_head+' style="color:[^"]+">([^<]+?)</span>','gi');
                 while( nodes[i].innerHTML.indexOf(span_head) != -1){
                     nodes[i].innerHTML=nodes[i].innerHTML.replace(re,'$1');
+                    nodes[i].setAttribute("hits_status","0");
                 }
             }
         }
@@ -138,7 +190,7 @@
                     var w="";
                     var c="";
                     if( cvs.length < 2){
-                        // alert("??error:word_view:invalid definition:"+val);
+                        // alert("??error:word_view:invalid definition: '"+val+"'");
                         w= cvs[0];
                         c="red";
                     } else {
@@ -154,10 +206,12 @@
                     try{
                         word_counts[String(w)]=word_color(w,c);
                     } catch(e){
-                        alert("??error:word_view:invalid definition:"+val+":"+e);
+                        alert("??error:word_view:invalid definition: '"+val+"' :"+e);
                     }
                 }
             );
+            let sh_obj= document.getElementById("showhide_hits");
+            show_nohits_record(sh_obj);
             let swr= document.getElementById('search_word_result');
             swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
         }
@@ -175,7 +229,9 @@
     <form action="" onsubmit="return false;" class="word_search" id="word_search" ondblclick="show_word_search();">
       <fieldset style="padding-top:0pt;padding-bottom:0pt;">
 	<legend>語句色付け定義</legend>
-	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="this:red"><br/>
+	<input type="text" size="138" placeholder="Enter word:color[,word:color...]" onchange="emphasis_words(this)" value="this:red"><br>
+	<input type="checkbox" id="showhide_hits" name="showhide_hits" checked onchange="show_nohits_record(this)">
+        <label for="showhide_hist" style="font-size:0.5em;">全レコード表示</label><br>
         <span style="font-size:0.5em;">
 	語句の色付け定義を"語句:色"で入力。複数入力する場合は半角カンマで区切って入力、語句には正規表現を利用可能<br>
         語句だけ指定した場合は、赤色が指定されたものとして処理される。
@@ -186,47 +242,46 @@
         <span style="font-size:small;" id="search_word_result"></span>
       </fieldset>
     </form>
-<div id='tablecontainer'><style  type="text/css" >
-#T_94c29_row0_col0,#T_94c29_row0_col1,#T_94c29_row0_col2,#T_94c29_row0_col3,#T_94c29_row0_col4,#T_94c29_row0_col5,#T_94c29_row0_col6,#T_94c29_row0_col7,#T_94c29_row0_col8,#T_94c29_row1_col0,#T_94c29_row1_col1,#T_94c29_row1_col2,#T_94c29_row1_col3,#T_94c29_row1_col4,#T_94c29_row1_col5,#T_94c29_row1_col6,#T_94c29_row1_col7,#T_94c29_row1_col8,#T_94c29_row2_col0,#T_94c29_row2_col1,#T_94c29_row2_col2,#T_94c29_row2_col3,#T_94c29_row2_col4,#T_94c29_row2_col5,#T_94c29_row2_col6,#T_94c29_row2_col7,#T_94c29_row2_col8,#T_94c29_row3_col0,#T_94c29_row3_col1,#T_94c29_row3_col2,#T_94c29_row3_col3,#T_94c29_row3_col4,#T_94c29_row3_col5,#T_94c29_row3_col6,#T_94c29_row3_col7,#T_94c29_row3_col8,#T_94c29_row4_col0,#T_94c29_row4_col1,#T_94c29_row4_col2,#T_94c29_row4_col3,#T_94c29_row4_col4,#T_94c29_row4_col5,#T_94c29_row4_col6,#T_94c29_row4_col7,#T_94c29_row4_col8,#T_94c29_row5_col0,#T_94c29_row5_col1,#T_94c29_row5_col2,#T_94c29_row5_col3,#T_94c29_row5_col4,#T_94c29_row5_col5,#T_94c29_row5_col6,#T_94c29_row5_col7,#T_94c29_row5_col8,#T_94c29_row6_col0,#T_94c29_row6_col1,#T_94c29_row6_col2,#T_94c29_row6_col3,#T_94c29_row6_col4,#T_94c29_row6_col5,#T_94c29_row6_col6,#T_94c29_row6_col7,#T_94c29_row6_col8{
+<div id="tablecontainer"><style type="text/css">
+#T_6c6fd_row0_col0,#T_6c6fd_row0_col1,#T_6c6fd_row0_col2,#T_6c6fd_row0_col3,#T_6c6fd_row0_col4,#T_6c6fd_row0_col5,#T_6c6fd_row0_col6,#T_6c6fd_row0_col7,#T_6c6fd_row0_col8,#T_6c6fd_row1_col0,#T_6c6fd_row1_col1,#T_6c6fd_row1_col2,#T_6c6fd_row1_col3,#T_6c6fd_row1_col4,#T_6c6fd_row1_col5,#T_6c6fd_row1_col6,#T_6c6fd_row1_col7,#T_6c6fd_row1_col8,#T_6c6fd_row2_col0,#T_6c6fd_row2_col1,#T_6c6fd_row2_col2,#T_6c6fd_row2_col3,#T_6c6fd_row2_col4,#T_6c6fd_row2_col5,#T_6c6fd_row2_col6,#T_6c6fd_row2_col7,#T_6c6fd_row2_col8{
             max-width:  200pm;
-        }</style><table id="T_94c29_" class="sticky_table display nowrap"><caption>test</caption><thead ondblclick="show_word_search();">    <tr>        <th class="blank level0" ></th>        <th class="col_heading level0 col0" >IDX</th>        <th class="col_heading level0 col1" >B</th>        <th class="col_heading level0 col2" >DT</th>        <th class="col_heading level0 col3" >C</th>        <th class="col_heading level0 col4" >O</th>        <th class="col_heading level0 col5" >I</th>        <th class="col_heading level0 col6" >A</th>        <th class="col_heading level0 col7" >image</th>        <th class="col_heading level0 col8" >title_of_image</th>    </tr></thead><tbody>
-                <tr>
-                        <th id="T_94c29_level0_row0" class="row_heading level0 row0" >0</th>
-                        <td id="T_94c29_row0_col0" class="data row0 col0" >1</td>
-                        <td id="T_94c29_row0_col1" class="data row0 col1" >A</td>
-                        <td id="T_94c29_row0_col2" class="data row0 col2" >2021-07-01 10:00:00</td>
-                        <td id="T_94c29_row0_col3" class="data row0 col3" >Sample1</td>
-                        <td id="T_94c29_row0_col4" class="data row0 col4" >Observation1:<span class="word_view_span" style="color:red;">this</span> is a pen. </td>
-                        <td id="T_94c29_row0_col5" class="data row0 col5" >Investigation1:Atre you there?</td>
-                        <td id="T_94c29_row0_col6" class="data row0 col6" >Action1: nothing to do</td>
-                        <td id="T_94c29_row0_col7" class="data row0 col7" >pattern.png</td>
-                        <td id="T_94c29_row0_col8" class="data row0 col8" >sample</td>
+        }</style><table id="T_6c6fd_" class="sticky_table display nowrap"><thead ondblclick="show_word_search();">    <tr>        <th class="blank level0"></th>        <th class="col_heading level0 col0">IDX</th>        <th class="col_heading level0 col1">B</th>        <th class="col_heading level0 col2">DT</th>        <th class="col_heading level0 col3">C</th>        <th class="col_heading level0 col4">O</th>        <th class="col_heading level0 col5">I</th>        <th class="col_heading level0 col6">A</th>        <th class="col_heading level0 col7">image</th>        <th class="col_heading level0 col8">title_of_image</th>    </tr></thead><tbody>
+                <tr id="rid_0" nrec="0">
+                        <th id="T_6c6fd_level0_row0" class="row_heading level0 row0">0</th>
+                        <td id="T_6c6fd_row0_col0" class="data row0 col0" nrec="0" hits_status="0">1</td>
+                        <td id="T_6c6fd_row0_col1" class="data row0 col1" nrec="0" hits_status="0">A</td>
+                        <td id="T_6c6fd_row0_col2" class="data row0 col2" nrec="0" hits_status="0">2021-07-01 10:00:00</td>
+                        <td id="T_6c6fd_row0_col3" class="data row0 col3" nrec="0" hits_status="0">Sample1</td>
+                        <td id="T_6c6fd_row0_col4" class="data row0 col4" nrec="0" hits_status="1">Observation1:<span class="word_view_span" style="color:red;">this</span> is a pen. You can’t position: sticky; a &lt;thead&gt;. Nor a &lt;tr&gt;. But you can sticky a &lt;th&gt;, which means you can make sticky headers inside a regular ol’ &lt;table&gt;. This is tricky stuff, because if you didn’t know <span class="word_view_span" style="color:red;">this</span> weird quirk, it would be hard to blame you. It makes way more sense to sticky a parent element like the table header rather than each individual element in a row  \^$.*+?()[]{}|</td>
+                        <td id="T_6c6fd_row0_col5" class="data row0 col5" nrec="0" hits_status="0">Investigation1:Atre you there?</td>
+                        <td id="T_6c6fd_row0_col6" class="data row0 col6" nrec="0" hits_status="0">Action1: nothing to do</td>
+                        <td id="T_6c6fd_row0_col7" class="data row0 col7" nrec="0" hits_status="0">pattern.png</td>
+                        <td id="T_6c6fd_row0_col8" class="data row0 col8" nrec="0" hits_status="0">sample</td>
             </tr>
-            <tr>
-                        <th id="T_94c29_level0_row2" class="row_heading level0 row2" >2</th>
-                        <td id="T_94c29_row2_col0" class="data row2 col0" >3</td>
-                        <td id="T_94c29_row2_col1" class="data row2 col1" >C</td>
-                        <td id="T_94c29_row2_col2" class="data row2 col2" >2021-08-07 10:00:00</td>
-                        <td id="T_94c29_row2_col3" class="data row2 col3" >Sample3</td>
-                        <td id="T_94c29_row2_col4" class="data row2 col4" >Observation3:<span class="word_view_span" style="color:red;">this</span> is a pen</td>
-                        <td id="T_94c29_row2_col5" class="data row2 col5" >Investigation2:Atre you there?</td>
-                        <td id="T_94c29_row2_col6" class="data row2 col6" >Action3: nothing to do</td>
-                        <td id="T_94c29_row2_col7" class="data row2 col7" >pattern.png</td>
-                        <td id="T_94c29_row2_col8" class="data row2 col8" ></td>
+            <tr id="rid_1" nrec="1">
+                        <th id="T_6c6fd_level0_row1" class="row_heading level0 row1">1</th>
+                        <td id="T_6c6fd_row1_col0" class="data row1 col0" nrec="1" hits_status="0">2</td>
+                        <td id="T_6c6fd_row1_col1" class="data row1 col1" nrec="1" hits_status="0">B</td>
+                        <td id="T_6c6fd_row1_col2" class="data row1 col2" nrec="1" hits_status="0">2021-07-07 10:00:00</td>
+                        <td id="T_6c6fd_row1_col3" class="data row1 col3" nrec="1" hits_status="0">Sample2</td>
+                        <td id="T_6c6fd_row1_col4" class="data row1 col4" nrec="1" hits_status="1">Observation2:<span class="word_view_span" style="color:red;">this</span> is a pen</td>
+                        <td id="T_6c6fd_row1_col5" class="data row1 col5" nrec="1" hits_status="0">Investigation2:Atre you there?</td>
+                        <td id="T_6c6fd_row1_col6" class="data row1 col6" nrec="1" hits_status="0">Action2: nothing to do</td>
+                        <td id="T_6c6fd_row1_col7" class="data row1 col7" nrec="1" hits_status="0">pattern.png</td>
+                        <td id="T_6c6fd_row1_col8" class="data row1 col8" nrec="1" hits_status="0"></td>
             </tr>
-            <tr>
-                        <th id="T_94c29_level0_row6" class="row_heading level0 row6" >6</th>
-                        <td id="T_94c29_row6_col0" class="data row6 col0" >7</td>
-                        <td id="T_94c29_row6_col1" class="data row6 col1" ></td>
-                        <td id="T_94c29_row6_col2" class="data row6 col2" ></td>
-                        <td id="T_94c29_row6_col3" class="data row6 col3" ></td>
-                        <td id="T_94c29_row6_col4" class="data row6 col4" ></td>
-                        <td id="T_94c29_row6_col5" class="data row6 col5" ></td>
-                        <td id="T_94c29_row6_col6" class="data row6 col6" ></td>
-                        <td id="T_94c29_row6_col7" class="data row6 col7" ></td>
-                        <td id="T_94c29_row6_col8" class="data row6 col8" ></td>
+            <tr id="rid_2" nrec="2">
+                        <th id="T_6c6fd_level0_row2" class="row_heading level0 row2">2</th>
+                        <td id="T_6c6fd_row2_col0" class="data row2 col0" nrec="2" hits_status="0">3</td>
+                        <td id="T_6c6fd_row2_col1" class="data row2 col1" nrec="2" hits_status="0">C</td>
+                        <td id="T_6c6fd_row2_col2" class="data row2 col2" nrec="2" hits_status="0">2021-08-07 10:00:00</td>
+                        <td id="T_6c6fd_row2_col3" class="data row2 col3" nrec="2" hits_status="0">Sample3</td>
+                        <td id="T_6c6fd_row2_col4" class="data row2 col4" nrec="2" hits_status="1">Observation3:<span class="word_view_span" style="color:red;">this</span> is a pen</td>
+                        <td id="T_6c6fd_row2_col5" class="data row2 col5" nrec="2" hits_status="0">Investigation3:Atre you there?</td>
+                        <td id="T_6c6fd_row2_col6" class="data row2 col6" nrec="2" hits_status="0">Action3: nothing to do</td>
+                        <td id="T_6c6fd_row2_col7" class="data row2 col7" nrec="2" hits_status="0">pattern.png</td>
+                        <td id="T_6c6fd_row2_col8" class="data row2 col8" nrec="2" hits_status="0"></td>
             </tr>
     </tbody></table></div>
   </body>
 </html>
-
