@@ -103,8 +103,9 @@ else
     COLUMNS=${COLUMNS:-1-10}
 fi
 
-NR=$(cat ${INPUT}| wc -l)
-NR=$((NR-1))
+#NR=$(cat ${INPUT}| wc -l)
+#NR=$((NR-1))
+NR=$(csvstat --count ${INPUT} | awk '{print $3}')
 if (( NR < ROWS )); then
     ROWS=${NR}
 fi

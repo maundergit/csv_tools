@@ -118,8 +118,9 @@ done
 
 
 NC=${#HEADERS[@]}
-NR=($(wc -l ${INPUT}))
-NR=$((${NR[0]}-1))
+#NR=($(wc -l ${INPUT}))
+#NR=$((${NR[0]}-1))
+NR=$(csvstat --count ${INPUT} | awk '{print $3}')
 CC=$(nkf -guess ${INPUT})
 if [ "${MODE}" = "1" ]; then
     echo ${NC}

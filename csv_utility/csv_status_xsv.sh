@@ -82,8 +82,9 @@ OUTPUT=${PREFIX}_status.csv
 
 #----
 
-NROWS=$(cat "${INPUT}"|wc -l )
-NROWS=$((NROWS-1))
+#NROWS=$(cat "${INPUT}"|wc -l )
+#NROWS=$((NROWS-1))
+NROWS=$(csvstat --count ${INPUT} | awk '{print $3}')
 
 xsv stats --select "${COLUMNS}" "${INPUT}" --everything |tee "${OUTPUT}"
 echo "-- ${OUTPUT} was created" 1>&2

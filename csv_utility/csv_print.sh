@@ -105,9 +105,10 @@ OIFS=${IFS}
 IFS=\|
 HEADERS=($(awk 'NR==1 {print $0}' "${INPUT}" | sed "s/\r//g" | tr "," "|"))
 IFS=${OIFS}
-NR=($(wc -l ${INPUT}))
-NR=${NR[0]}
-NR=$((NR-1))
+#NR=($(wc -l ${INPUT}))
+#NR=${NR[0]}
+#NR=$((NR-1))
+NR=$(csvstat --count ${INPUT} | awk '{print $3}')
 NC=${#HEADERS[@]}
 R0=$((ROW-HWR < 1 ? 1: ROW-HWR))
 R1=$((ROW+HWR > NR ? NR: ROW+HWR))
