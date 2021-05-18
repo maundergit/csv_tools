@@ -30,10 +30,11 @@ check_commands() {
         exit 1
     fi
 }
-check_commands plantuml csv_print_html.py csv_print_html_oia.py csv_print_html_tl.py
+check_commands plantuml csv_print_html.py csv_print_html_oia.py csv_print_html_tl.py csvstat
 
 
 function make_index_html(){
+    NREC=$1
     cat <<EOF > ${OUTPUT_INDEX}
 <?xml version="1.0" encoding="utf-8"?>
 <html>
@@ -47,7 +48,7 @@ function make_index_html(){
   <body>
     <h1>テキスト文書の時系列データとしての初期分析</h1>
     <hr/>
-    入力文書:${INPUT}
+    入力文書:${INPUT}, レコード数: ${NREC}
     <ul>
       <li>
 	<a href="${OUTPUT_HTML}" target="csv_print_html">CSVの表形式表示</a><br/>
@@ -207,6 +208,9 @@ O_COL=$3
 I_COL=$4
 A_COL=$5
 
+shift 5
+ARGS=$*
+
 PREFIX=${INPUT_BASE%.*}
 SUFFIX=${INPUT_BASE#${INPUT_BASE%.*}.}
 
@@ -223,6 +227,7 @@ OUTPUT_TL_SVG=${PREFIX}_tl.svg
 #----
 
 DATE_FORMAT=${DATE_FORMAT:-%Y-%m-%d %H:%M:%S}
+NREC=$(csvstat --count ${INPUT} | awk '{print $3}')
 
 O_OPTS=
 OIA_OPTS=
@@ -255,14 +260,14 @@ if [ "$?" != "0" ]; then
 fi
 
 echo -e "\n-- csv_print_html_oia" 1>&2
-csv_print_html_oia.py ${OIA_OPTS} --search_on_html ${INPUT}  ${O_COL} ${I_COL} ${A_COL} > ${OUTPUT_OIA_HTML}
+csv_print_html_oia.py ${OIA_OPTS} --search_on_html ${INPUT}  ${O_COL} ${I_COL} ${A_COL} ${ARGS} > ${OUTPUT_OIA_HTML}
 if [ "$?" != "0" ]; then
     exit
 fi
 
 echo -e "\n-- csv_print_html_tl" 1>&2
 csv_print_html_tl.py ${TL_OPTS} --datetime_format="${DATE_FORMAT}" --output=${OUTPUT_TL_HTML}\
-		     ${INPUT} ${DATE_COL} ${O_COL} ${I_COL} ${A_COL}
+		     ${INPUT} ${DATE_COL} ${O_COL} ${I_COL} ${A_COL} ${ARGS}
 if [ "$?" != "0" ]; then
     exit
 fi
@@ -278,7 +283,7 @@ fi
 
 triming_svg
 make_oia_handler
-make_index_html
+make_index_html ${NREC}
 
 
 #----
