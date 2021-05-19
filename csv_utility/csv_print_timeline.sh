@@ -83,6 +83,12 @@ EOF
 }
 function make_oia_handler(){
     OIA_HANDLER=oia_handler.js
+    if [ -e "${OIA_HANDLER}" ]; then
+	OIA_HANDLER_N=${OIA_HANDLER}.$$
+	echo "#warn:csv_print_timeline: ${OIA_HANLDER} alread exits, ${OIA_HANDLER_N} was created." 1>&2
+	OIA_HANDLER=${OIA_HANDLER_N}
+    fi
+       
     cat <<EOF > ${OIA_HANDLER}
 // -*- coding:utf-8 mode:javascript -*-
 // File: oia_handler.js
@@ -253,6 +259,13 @@ if [ "${TL_OPTS_0}" != "" ]; then
     TL_OPTS="${TL_OPTS} ${TL_OPTS_0}"
 fi
 
+NR=$(csvstat --count ${INPUT} | awk '{print $3}')
+
+if (( ${NR} > 1000 )); then
+    echo "#warn:csv_print_timeline: number of records is more than 1000: ${NR}" 1>&2
+    echo "                          it may take too long time to view some html." 1>&2
+fi
+
 echo -e "\n-- csv_print_html" 1>&2
 csv_print_html.py ${O_OPTS} --search_on_html ${INPUT} > ${OUTPUT_HTML}
 if [ "$?" != "0" ]; then
@@ -281,7 +294,11 @@ EOF
     exit
 fi
 
-triming_svg
+#triming_svg
+SVG_TMP=${SNAME}.$$.svg
+cp ${OUTPUT_TL_SVG}  ${SVG_TMP}
+csv_print_timeline_trim_svg.py  ${OUTPUT_TAGS_TEXT} ${OUTPUT_TL_PU} ${SVG_TMP} ${OUTPUT_OIA_HTML} > ${OUTPUT_TL_SVG}
+rm ${SVG_TMP}
 make_oia_handler
 make_index_html ${NREC}
 
