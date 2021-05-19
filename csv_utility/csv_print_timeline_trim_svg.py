@@ -24,7 +24,7 @@ VERSION = 1.0
 
 def init():
     # argparse --- コマンドラインオプション、引数、サブコマンドのパーサー  Python 3.8.5 ドキュメント https://docs.python.org/ja/3/library/argparse.html
-    arg_parser = argparse.ArgumentParser(description="",
+    arg_parser = argparse.ArgumentParser(description="helper tool for csv_print_timeline.sh",
                                          formatter_class=argparse.RawDescriptionHelpFormatter,
                                          epilog=textwrap.dedent('''
 example:
