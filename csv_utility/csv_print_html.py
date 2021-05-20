@@ -337,7 +337,14 @@ def do_trim_null(dsty, tnull_defs):
     return dsty
 
 
-def html_prologe(align_center=True, width=None, datatable=False, word_colors="", search_on_html=False):
+def html_prologe(
+    align_center=True,
+    width=None,
+    datatable=False,
+    word_colors="",
+    search_on_html=False,
+    progress_bar=False,
+):
     table_css = ""
     datatable_header = ""
     if datatable:
@@ -476,6 +483,17 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                 let search_string=decodeURI(window.location.search.substring(1));
                 window.find(search_string,false,false,true,false,true);
             }}
+            show_hide_progress_bar(false);
+        }}
+        function show_hide_progress_bar(onoff){{
+            let prg_elm= document.getElementById("progfs");
+            if( prg_elm){{
+                if(onoff){{
+                    prg_elm.style.visibility="visible";
+                }} else {{
+                    prg_elm.style.visibility="hidden";
+                }}
+            }}
         }}
         function show_nrec_record(nrec,onoff){{
             let tr_objs= document.evaluate("/html//tr[@nrec=\\""+nrec+"\\"]",document,null,XPathResult.ANY_TYPE, null);
@@ -555,6 +573,7 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
             let cvs= wc_defs.split(re);
             let word_counts={{}};
             word_color_reset();
+            show_hide_progress_bar(true);
             cvs.forEach(
                 function (val ){{
                     if(val==""){{
@@ -589,15 +608,16 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
             show_nohits_record(sh_obj);
             let swr= document.getElementById('search_word_result');
             swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
+            show_hide_progress_bar(false);
         }}
         function show_word_search(){{
             let fobj= document.getElementById("word_search");
 
             sty_visibility=fobj.style.visibility;
             if( sty_visibility == "" || sty_visibility == "hidden"){{
-                fobj.style.visibility="visible"
+                fobj.style.visibility="visible";
             }} else {{
-                fobj.style.visibility="hidden"
+                fobj.style.visibility="hidden";
             }}
         }}
    </script>
@@ -621,6 +641,14 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
     else:
         text += f'<input value="{word_colors}" style="display:none" />\n'
 
+    if progress_bar:
+        text += """
+      <fieldset id="progfs" 
+                style="padding-top:0pt;padding-bottom:0pt;position:fixed;height:2em;top:1em;right:10;background-color:white;z-index:100;padding:0.5em;background-color: #e0ffff;">
+	<label for="progbar" style="font-size:0.5em;">しばらくお待ちください</label>
+	<progress id="progbar" style="width:20em;height:1em;"></progress>
+      </fieldset>
+"""
     return text
 
 
@@ -844,7 +872,12 @@ if __name__ == "__main__":
     if column_widths is not None:
         df_sty = set_column_width(column_widths, df_sty)
 
-    html_str = html_prologe(width=None, datatable=datatable_mode, word_colors=pcolors_s, search_on_html=search_on_html)
+    progress_bar = len(csv_df) > 0
+    html_str = html_prologe(width=None,
+                            datatable=datatable_mode,
+                            word_colors=pcolors_s,
+                            search_on_html=search_on_html,
+                            progress_bar=progress_bar)
     html_str += "<div id='tablecontainer'>"
     table_str = df_sty.render()
 

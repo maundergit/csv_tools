@@ -80,7 +80,7 @@ IDX,B,C,O,I,A
     return args
 
 
-def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_html=False, title=""):
+def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_html=False, progress_bar=False, title=""):
     table_css_2 = ""
     if align_center:
         table_css_2 += "margin-left: auto;margin-right: auto;"
@@ -238,6 +238,17 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                 let search_string=decodeURI(window.location.search.substring(1));
                 window.find(search_string,false,false,true,false,true);
             }}
+            show_hide_progress_bar(false);
+        }}
+        function show_hide_progress_bar(onoff){{
+            let prg_elm= document.getElementById("progfs");
+            if( prg_elm){{
+                if(onoff){{
+                    prg_elm.style.visibility="visible";
+                }} else {{
+                    prg_elm.style.visibility="hidden";
+                }}
+            }}
         }}
         function show_nrec_record(nrec,onoff){{
             let tr_objs= document.evaluate("/html//tr[@nrec=\\""+nrec+"\\"]",document,null,XPathResult.ANY_TYPE, null);
@@ -317,6 +328,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
             let cvs= wc_defs.split(re);
             let word_counts={{}};
             word_color_reset();
+            show_hide_progress_bar(true);
             cvs.forEach(
                 function (val ){{
                     if(val==""){{
@@ -351,15 +363,16 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
             show_nohits_record(sh_obj);
             let swr= document.getElementById('search_word_result');
             swr.innerHTML="検索結果:"+JSON.stringify(word_counts);
+            show_hide_progress_bar(false);
         }}
         function show_word_search(){{
             let fobj= document.getElementById("word_search");
 
             sty_visibility=fobj.style.visibility;
             if( sty_visibility == "" || sty_visibility == "hidden"){{
-                fobj.style.visibility="visible"
+                fobj.style.visibility="visible";
             }} else {{
-                fobj.style.visibility="hidden"
+                fobj.style.visibility="hidden";
             }}
         }}
    </script>
@@ -382,6 +395,15 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
 """.format(OIA_HANDLER_JS, word_colors)
     else:
         text += f'<input value="{word_colors}" style="display:none" />\n'
+
+    if progress_bar:
+        text += """
+      <fieldset id="progfs" 
+                style="padding-top:0pt;padding-bottom:0pt;position:fixed;height:2em;top:1em;right:10;background-color:white;z-index:100;padding:0.5em;background-color: #e0ffff;">
+	<label for="progbar" style="font-size:0.5em;">しばらくお待ちください</label>
+	<progress id="progbar" style="width:20em;height:1em;"></progress>
+      </fieldset>
+"""
 
     return text
 
@@ -552,7 +574,8 @@ if __name__ == "__main__":
 
     csv_df = pd.read_csv(csv_file, dtype='object')
 
-    html_str = html_prologe_oia(width=None, word_colors=pcolors_s, search_on_html=search_on_html, title=title)
+    progress_bar = len(csv_df) > 0
+    html_str = html_prologe_oia(width=None, word_colors=pcolors_s, search_on_html=search_on_html, title=title, progress_bar=progress_bar)
     html_str += "<div id='tablecontainer'>"
     table_str, output_df = make_table(csv_df, columns, oia_columns, pcolors)
     html_str += table_str
