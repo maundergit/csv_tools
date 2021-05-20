@@ -529,6 +529,8 @@ def html_prologe(align_center=True, width=None, datatable=False, word_colors="",
                 count_0= (nodes[i].innerHTML.match(re) ||[]).length;
                 if( count_0 > 0){{
                     nodes[i].setAttribute("hits_status","1");
+                }} else {{
+                    nodes[i].setAttribute("hits_status","0");
                 }}
                 count= count+ count_0;
             }}
