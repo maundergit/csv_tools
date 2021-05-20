@@ -574,7 +574,7 @@ if __name__ == "__main__":
 
     csv_df = pd.read_csv(csv_file, dtype='object')
 
-    progress_bar = len(csv_df) > 0
+    progress_bar = len(csv_df) > 500
     html_str = html_prologe_oia(width=None, word_colors=pcolors_s, search_on_html=search_on_html, title=title, progress_bar=progress_bar)
     html_str += "<div id='tablecontainer'>"
     table_str, output_df = make_table(csv_df, columns, oia_columns, pcolors)

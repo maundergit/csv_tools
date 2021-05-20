@@ -872,7 +872,7 @@ if __name__ == "__main__":
     if column_widths is not None:
         df_sty = set_column_width(column_widths, df_sty)
 
-    progress_bar = len(csv_df) > 0
+    progress_bar = len(csv_df) > 500
     html_str = html_prologe(width=None,
                             datatable=datatable_mode,
                             word_colors=pcolors_s,
