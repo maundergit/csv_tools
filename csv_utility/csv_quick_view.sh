@@ -11,9 +11,28 @@ DDIR=$(dirname $0)
 SNAME=$(basename $0)
 #DDIR_ABS=$(cd $(dirname ${DDIR}) && pwd)/$(basename $DDIR)
 DDIR_ABS=$(realpath ${DDIR})
-TMPDIR=/tmp
-# TMPDIR=/tmp/${SNAME}.$$
+#TMPDIR=/tmp
+TMPDIR=/tmp/${SNAME}.$$
 
+remove_tmpdir(){
+    if [[ "${TMPDIR}" != "" && "${TMPDIR}" =~ ${SNAME} && -e "${TMPDIR}" ]]; then
+	rm -rf "${TMPDIR}"
+    fi
+}
+check_and_get_stdin(){
+    if [ "${INPUT}" = "-" ]; then
+	if [ ! -e "${TMPDIR}" ]; then
+	    mkdir "${TMPDIR}"
+	fi
+	TMPFILE_INPUT="${TMPDIR}/${SNAME}_input.tmp"
+	cat > ${TMPFILE_INPUT}
+	INPUT=${TMPFILE_INPUT}
+    elif [ ! -e "${INPUT}" ]; then
+	echo "??Error: file not found: ${INPUT}" 1>&2
+	exit 1
+    fi
+    echo ${INPUT}
+}
 check_commands() {
     # check_commands ls dataflow find
     # usage: check_commands "${array[@]}"
@@ -70,7 +89,7 @@ PREFIX=${INPUT_BASE%.*}
 SUFFIX=${INPUT_BASE#${INPUT_BASE%.*}.}
 OUTPUT=${PREFIX}.raw
 
-# INPUT=$(check_and_get_stdin "${INPUT}")
+INPUT=$(check_and_get_stdin "${INPUT}")
 
 #----
 
@@ -83,7 +102,7 @@ else
 fi
 
 #----
-# remove_tmpdir
+remove_tmpdir
 #-------------
 # Local Variables:
 # mode: sh
