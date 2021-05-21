@@ -76,7 +76,10 @@ def read_pu(pu_file):
     return results
 
 
-def add_style(svg_root):
+def add_style(svg_root, pu_groups):
+    for pg in pu_groups:
+        for elm in svg_root.xpath(f"//*/svg:text[contains(text(),'{pg}')]", namespaces=xml_ns):
+            elm.set("class", "hover_text")
     #    echo "s/<\/g><\/svg>/<\/g><style type='text\/css'>a:hover {font-weight:bold;font-size:110%;}<\/style><\/svg>/;" >> ${SED_SCR_F}
     style_elm = etree.Element('style')
     style_elm.set("type", "text/css")
@@ -130,9 +133,6 @@ if __name__ == "__main__":
     svg_root = svg_tree.getroot()
     xml_ns = {"svg": "http://www.w3.org/2000/svg"}
 
-    for pg in pu_groups:
-        for elm in svg_root.xpath(f"//*/svg:text[contains(text(),'{pg}')]", namespaces=xml_ns):
-            elm.set("class", "hover_text")
     for k in tags_dic.keys():
         for elm in svg_root.xpath(f"//*/svg:text[contains(text(),'{k}')]", namespaces=xml_ns):
             a_elm = etree.Element('a')
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             elm.append(a_elm)
             elm.text = ""
 
-    add_style(svg_root)
+    add_style(svg_root, pu_groups)
     add_script(svg_root)
 
     svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
