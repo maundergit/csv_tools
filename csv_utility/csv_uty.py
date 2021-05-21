@@ -1039,7 +1039,7 @@ if __name__ == "__main__":
         print("%Inf:csv_uty:add serial column:{}".format(serial_column), file=sys.stderr)
         if serial_column in csv_df:
             print("#Warn:csv_uty:{} already exits, it was overwritten.", file=sys.stderr)
-        csv_df[serial_column] = list(range(0, len(csv_df) * serial_step - 1, serial_step))
+        csv_df[serial_column] = list(range(0, len(csv_df) * serial_step, serial_step))
 
     # drop columns
     if drop_columns_regex is not None:
