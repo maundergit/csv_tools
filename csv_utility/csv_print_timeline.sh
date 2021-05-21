@@ -84,7 +84,7 @@ EOF
 function make_oia_handler(){
     OIA_HANDLER=oia_handler.js
     if [ -e "${OIA_HANDLER}" ]; then
-	OIA_HANDLER_N=${OIA_HANDLER}.$$
+	OIA_HANDLER_N=${OIA_HANDLER}.save.$$
 	echo "#warn:csv_print_timeline: ${OIA_HANLDER} alread exits, ${OIA_HANDLER_N} was created." 1>&2
 	OIA_HANDLER=${OIA_HANDLER_N}
     fi
@@ -285,20 +285,23 @@ if [ "$?" != "0" ]; then
     exit
 fi
 
-echo -e "\n-- convert plantuml to SVG: ${OUTPUT_TL_SVG}" 1>&2
-plantuml -tsvg ${OUTPUT_TL_PU}
-if [ "$?" != "0" ]; then
-    cat <<EOF 2>&1
+if [ -e "${OUTPUT_TL_PU}" ]; then
+    echo -e "\n-- convert plantuml to SVG: ${OUTPUT_TL_SVG}" 1>&2
+    plantuml -tsvg ${OUTPUT_TL_PU}
+    if [ "$?" != "0" ]; then
+	cat <<EOF 2>&1
 ??error: latest version of plantuml is required.
 EOF
-    exit
+	exit
+    fi
+
+    #triming_svg
+    SVG_TMP=${SNAME}.$$.svg
+    cp ${OUTPUT_TL_SVG}  ${SVG_TMP}
+    csv_print_timeline_trim_svg.py  ${OUTPUT_TAGS_TEXT} ${OUTPUT_TL_PU} ${SVG_TMP} ${OUTPUT_OIA_HTML} > ${OUTPUT_TL_SVG}
+    rm ${SVG_TMP}
 fi
 
-#triming_svg
-SVG_TMP=${SNAME}.$$.svg
-cp ${OUTPUT_TL_SVG}  ${SVG_TMP}
-csv_print_timeline_trim_svg.py  ${OUTPUT_TAGS_TEXT} ${OUTPUT_TL_PU} ${SVG_TMP} ${OUTPUT_OIA_HTML} > ${OUTPUT_TL_SVG}
-rm ${SVG_TMP}
 make_oia_handler
 make_index_html ${NREC}
 
