@@ -102,6 +102,7 @@ if [ "${COLUMNS}" != "" ]; then
 	csvgrep ${G_OPTS} --columns ${C} --regex "${PATTERN}" "${INPUT}" | sed '1d'
     done | sort | uniq 
 else
+    head -1 "${INPUT}"
     grep ${G_OPTS} -P "${PATTERN}" "${INPUT}"
 fi
 
