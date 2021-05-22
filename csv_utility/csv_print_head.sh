@@ -65,25 +65,30 @@ check_commands awk sed seq csvlook fmt csv_multiindex_columns.py
 usage_exit() {
     cat <<EOF 2>&1
 to print names of columns in csv file
-Usage: $SNAME [-t] [-c columns] [-n index_width] [-r nrows] csv_file
+Usage: $SNAME [-t] [-d] [-c columns] [-n index_width] [-r nrows] csv_file
 
 options:
   -t             : table format
   -c columns     : index of columns to print, ex: 1-10,51-60
   -n index_width : number of width of index, default=5
   -r nrows       : multiindex columns mode, nrows is number of rows of headers
+  -d             : without number
 
 remark:
   as assumption, there is only one header row in csv file.
+
+  if you have 'xsv', using 'xsv' may be usefull.
 
 EOF
     exit 1
 }
 
-while getopts ac:n:r:th OPT
+while getopts ac:dn:r:th OPT
 do
     case $OPT in
         a)  FLAG_A=1
+            ;;
+        d)  WITHOUT_NUMBER=1
             ;;
         c)  COLUMNS=$OPTARG
             ;;
@@ -144,8 +149,12 @@ fi
 RES=$(
     for C in ${CNOS[@]}; do
 	v=${HEADERS[${C}]}
-	if [ "${v}" != "" ]; then 
-	    printf "%0${N_LENGTH}d:%s |" ${C} "${v}"
+	if [ "${v}" != "" ]; then
+	    if [ "${WITHOUT_NUMBER}" = "" ]; then
+		printf "%0${N_LENGTH}d:%s |" ${C} "${v}"
+	    else
+		echo "${v}"
+	    fi
 	fi
     done 
    )
