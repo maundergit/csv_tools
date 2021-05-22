@@ -49,6 +49,8 @@ remark:
  when '-c' option was used, number of categories must be equal to number of csv files.
  if this option was given, for each record there is column of category in result.
 
+ if you have 'xsv', use 'xsv cat rows/columns'
+
 example:
   csv_stack.sh -c p1,p2 test1.csv test2.csv
   A,B,Category
@@ -98,6 +100,10 @@ if [ "${CATS}" != "" ]; then
     fi
 fi
 #----
+
+if [ "$(which xsv)" != "" ]; then
+    echo "#warn:csv_stack.sh:you have 'xsv', using 'xsv cat rows/columns' is recomended." 1>&2
+fi
 
 if [ "${MODE}" = "v" ]; then
     COUNT=0
