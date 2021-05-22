@@ -126,6 +126,8 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 - [テキスト文書の時系列データ分析](TextTimeseries.md)
 - [[実験的機能]テキスト文書の時系列データ分析(2)](TextTimeseries2.md)  
   `csv_print_html_tl.py`の`--module_figure`機能の説明
+- [[実験的機能]テキスト文書の時系列データ分析(3)](TextTimeseries3.md)  
+  `csv_print_timeline.sh`の説明
 
 ## 主として利用しているライブラリなど
 
