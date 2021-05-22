@@ -140,7 +140,7 @@ example:
 def series_statistics(ps):
     """print statistics about pandas.Series
 
-    :param ps: panas.Series 
+    :param ps: pandas.Series 
 
     """
     if ps.dtype == object:
@@ -163,10 +163,19 @@ def series_statistics(ps):
         print(ps.describe(include='all'))
         idxmax = ps.idxmax()
         idxmin = ps.idxmin()
+        v_sum = ps.sum(skipna=True)
+        v_med = ps.median(skipna=True)
+        v_mode = ps.mode(dropna=True).tolist()
         print("maximum value: pos={}, value={}".format(idxmax, ps.iloc[idxmax]))
         print("minimum value: pos={}, value={}".format(idxmin, ps.iloc[idxmin]))
+        print("summarize    : value={}".format(v_sum))
+        print("median       : value={}".format(v_med))
+        if len(v_mode) > 10:
+            print("mode         : too many")
+        else:
+            print("mode         : value={}".format(v_mode))
 
-    print("NA count: {}".format(ps.isnull().sum()))
+    print("NA count     : {}".format(ps.isnull().sum()))
     print("")
 
 
