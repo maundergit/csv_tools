@@ -77,6 +77,7 @@ def read_pu(pu_file):
 
 
 def add_style(svg_root, pu_groups):
+    xml_ns = {"svg": "http://www.w3.org/2000/svg"}
     for pg in pu_groups:
         for elm in svg_root.xpath(f"//*/svg:text[contains(text(),'{pg}')]", namespaces=xml_ns):
             elm.set("class", "hover_text")
@@ -92,12 +93,16 @@ def add_script(svg_root):
     scr_text = '''
 window.addEventListener("scroll",
 			function(evt) {
-
 			    var nodes=document.querySelectorAll("text.hover_text")
 			    nodes.forEach(
 				function(elm){
 				    elm.setAttribute("x", screenXtoSVGUnits(window.scrollX) + 10);
 				});
+         		    g_elm=document.getElementById("time_scale")
+			    if( g_elm){
+				let y0= g_elm.getAttribute("y")
+				g_elm.setAttribute("transform", "translate(0,"+(screenYtoSVGUnits(window.scrollY) +y0)+")");
+			    }
 			}
 		       );
 
@@ -109,11 +114,30 @@ function screenXtoSVGUnits(val) {
     pt = pt.matrixTransform(svg.getCTM().inverse());
     return pt.x;
 }
+function screenYtoSVGUnits(val) {
+    const svg = document.getElementsByTagName("svg")[0];
+    let pt = svg.createSVGPoint();
+    pt.x = 0;
+    pt.y = val;
+    pt = pt.matrixTransform(svg.getCTM().inverse());
+    return pt.y;
+}
 '''
     script_elm = etree.Element('script')
     script_elm.set("type", "text/javascript")
     script_elm.text = scr_text
     svg_root.append(script_elm)
+
+
+def trim_svg_string(svg_string):
+    # 下記の置き換えは、ダミータスクの存在を前提としたものである。
+    svg_string = re.sub(r"<g>", '<g><g id="time_scale">', svg_string, count=1)
+    # polys = re.findall(r'<line style="stroke:#A80036;stroke-width:1.0;"[^/]+/>', svg_string)
+    # polys = re.findall(r'<rect[^/]+/>', svg_string)
+    # svg_string = svg_string.replace(polys[-1], "</g>" + polys[-1])
+
+    svg_string = re.sub(r"(<rect[^/]+/>\s*<line[^/]+/>\s*<line[^/]+/>\s*<line[^/]+/>\s*<line[^/]+/>)", r"\1</g>", svg_string)
+    return svg_string
 
 
 if __name__ == "__main__":
@@ -148,4 +172,6 @@ if __name__ == "__main__":
 
     svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
     svg_string = svg_string.decode('utf8')
+    svg_string = trim_svg_string(svg_string)
+
     print(svg_string)
