@@ -50,6 +50,7 @@ def init():
                                          formatter_class=argparse.RawDescriptionHelpFormatter,
                                          epilog=textwrap.dedent('''
 remark:
+  there must be 'csv_print_html_oia.py' must be the same directory.
 
   Generated html uses script of TimelineJS3. if you used CDN(cdn.knightlab.com), use '--cdn'.
   Without '--cdn', those scripts must be gotten from 'cdn.knightlab.com' and 
