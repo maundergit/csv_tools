@@ -463,7 +463,10 @@ def make_html(json_str, word_colors, timeline_local=True):
 #      "timenav_height":250,
 
 
-def make_gantt(df, datetime_column, group_column="group", headline_column=None, title=None):
+def make_gantt(df, datetime_column, group_column="group", headline_column=None, title=None, summarize_by_date=False):
+    if group_column is None:
+        mes = f"??error:make_gantt: group_column must be defined."
+        raise ValueError(mes)
     separator_font_size = 18
     groups = sorted(list(df[group_column].unique()))
 
@@ -489,6 +492,7 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
             continue
         result_s.append(f"-- <size:{separator_font_size}><b>{grp}</b></size> --")
         ds = df.loc[df[group_column] == grp, datetime_column]
+        dt_set = set()
         for idx, dt in ds.items():
             dt_s = dt.strftime("%Y-%m-%d")
             if headline_column is not None:  # headline_columnでタスク名生成が指定されている場合
@@ -501,8 +505,10 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
                     id_name = f"{id_name}_0"
             else:
                 id_name = f"id_{idx}"
-            result_s.append(f"[{id_name}] happens {dt_s}")
-            result_tags_s.append(f"{idx},{id_name}")
+            if not summarize_by_date or dt_s not in dt_set:
+                result_s.append(f"[{id_name}] happens {dt_s}")
+                result_tags_s.append(f"{idx},{id_name}")
+            dt_set.add(dt_s)
 
     result_s.append("@endgantt")
     result = "\n".join(result_s)
