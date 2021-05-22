@@ -136,6 +136,9 @@ function get_column_index(){
 }
 
 #----
+if [ "$(which xsv)" != "" ]; then
+    echo "#warn:csv_stack.sh:you have 'xsv', using 'xsv select' is recomended." 1>&2
+fi
 if [ "${R_RANGE}" != "all" ]; then
     RS=($(echo ${R_RANGE}| tr "," " "))
     R0=${RS[0]}
