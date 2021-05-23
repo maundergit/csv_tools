@@ -132,8 +132,8 @@ HTMLの表示では、上部にタイムラインが表示され、タイムラ�
 例えば、ガントチャートの内容から得られた”人間”と”我輩”について文中でどう使われているかを文内容を見て確認することができる。
 
 
-![wagahaiha_nekodearu](examples/wagahaiwa_nekodearu.png "wagahaiha_nekodearu Timeline")  
-[タイムライン表示](examples/wagahaiwa_nekodearu.html "wagahaiha_nekodearu Timeline")
+![wagahaiha_nekodearu](examples/wagahaiwa_nekodearu_timeline.png "wagahaiha_nekodearu Timeline")  
+[タイムライン表示](https://maundergit.github.io/csv_tools/examples/wagahaiwa_nekodearu_tl.html "wagahaiha_nekodearu Timeline")
 
 
 タイムライン表示に図面表示機能を付加したものについては 「[[実験的機能]テキスト文書の時系列データ分析(2)](TextTimeseries2.md)」参照のこと

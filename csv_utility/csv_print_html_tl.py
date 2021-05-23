@@ -484,9 +484,11 @@ def make_gantt(df, datetime_column, group_column="group", headline_column=None, 
     result_s = ["@startgantt", f"Project starts {dt_0.year}-{dt_0.month}-01"]
     if title is not None:
         result_s.append(f"title {title}")
+    result_s.append("printscale weekly")
+    datetime.datetime.now()
+    result_s.append(f"header made by csv_print_html at {datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
     # 表示で幅を持たすためのダミータスク
     result_s.append(f"[ ] starts {dt_0.year}-{dt_0.month}-01 and ends {dt_1.year}-{dt_1.month}-{dt_1.day}")
-    result_s.append("printscale weekly")
     result_tags_s = ["idx,id_name"]
     for grp in groups:
         if len(grp) == 0:
