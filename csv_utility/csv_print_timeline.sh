@@ -143,6 +143,19 @@ function triming_svg(){
     rm ${TMP_SVG}
     rm ${SED_SCR_F}
 }
+function check_sorted(){
+    INPUT=$1
+    TMPFILE_1=${SNAME}_$$_1.csv
+    TMPFILE_2=${SNAME}_$$_2.csv
+    csvcut -C ${DATE_COL} ${INPUT} > ${TMPFILE_1}
+    csvsort -c ${DATE_COL} ${INPUT} | csvcut -C ${DATE_COL} > ${TMPFILE_2}
+    CHECK=$(diff ${TMPFILE_1} ${TMPFILE_2} | grep "^>" | wc -l)
+    rm ${TMPFILE_1} ${TMPFILE_2}
+    if (( ${CHECK} > 0)) ; then
+	echo "??error:csv_print_timeline.sh: ${INPUT} must be sorted about ${DATE_COL}." 1>&2
+	exit 1
+    fi
+}
 
 usage_exit() {
     cat <<EOF 2>&1
@@ -166,10 +179,12 @@ remark:
   各ツールで生成されるHTML、SVG間のハイパーリンクを設定し、相互に行き来することを可能とします。
   csv_print_html.py,csv_print_html_oia.py,csv_print_html_tl.py
 
+  入力されるCSVファイルは'datetime_column'が昇順になっている必要があります。
+
   'oia_handler.js'を修正することで"指定列のまとめ表示"からのリンクジャンプ先を制御可能です。
 
 example 
-  csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" wagahaiwa_nekodearu.csv date contente content
+  csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" wagahaiwa_nekodearu.csv date content
   csv_print_timeline.sh -c "吾輩,人間,我慢,書斎" -m "wagahaiwa_nekodearu_module.svg:7" -p wagahaiwa_nekodearu_map.txt wagahaiwa_nekodearu.csv date content
   csv_print_timeline.sh -a IDX,B,C -c 'this:red' csv_print_html_sample.csv  DT O I A
   csv_print_timeline.sh -a IDX,B,C -c 'this:red' -t '--headline=IDX' csv_print_html_sample.csv DT O I A
@@ -209,12 +224,21 @@ fi
 INPUT=$1
 INPUT_BASE=$(basename ${INPUT})
 
+if [ "${INPUT}" = "-" ]; then
+    echo "??error:csv_print_timeline: '-' is not avilable as input." 1>&2
+    exit 1
+fi
+
 DATE_COL=$2
 O_COL=$3
 I_COL=$4
 A_COL=$5
 
-shift 5
+if (( $# > 5 )); then
+    shift 5
+else
+    shift $#
+fi
 ARGS=$*
 
 PREFIX=${INPUT_BASE%.*}
@@ -266,6 +290,11 @@ if (( ${NR} > 1000 )); then
     echo "                          it may take too long time to view some html." 1>&2
 fi
 
+
+# check sort by datetime
+check_sorted ${INPUT}
+
+
 echo -e "\n-- csv_print_html" 1>&2
 csv_print_html.py ${O_OPTS} --search_on_html ${INPUT} > ${OUTPUT_HTML}
 if [ "$?" != "0" ]; then
@@ -273,6 +302,7 @@ if [ "$?" != "0" ]; then
 fi
 
 echo -e "\n-- csv_print_html_oia" 1>&2
+echo csv_print_html_oia.py ${OIA_OPTS} --search_on_html ${INPUT}  ${O_COL} ${I_COL} ${A_COL} ${ARGS}
 csv_print_html_oia.py ${OIA_OPTS} --search_on_html ${INPUT}  ${O_COL} ${I_COL} ${A_COL} ${ARGS} > ${OUTPUT_OIA_HTML}
 if [ "$?" != "0" ]; then
     exit
@@ -304,7 +334,6 @@ fi
 
 make_oia_handler
 make_index_html ${NREC}
-
 
 #----
 # remove_tmpdir
