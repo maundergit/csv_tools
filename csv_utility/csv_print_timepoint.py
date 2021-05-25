@@ -106,9 +106,9 @@ def triming_svg(svg_string, pu_groups):
     svg_root = svg_tree.getroot()
     xml_ns = {"svg": "http://www.w3.org/2000/svg"}
     add_style(svg_root, pu_groups)
-    add_script(svg_root)
-    svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
-    svg_string = svg_string.decode('utf8')
+    svg_string = add_script(svg_root)
+    # svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
+    # svg_string = svg_string.decode('utf8')
     svg_string = trim_svg_string(svg_string)
     return svg_string
 

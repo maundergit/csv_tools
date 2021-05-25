@@ -123,10 +123,19 @@ function screenYtoSVGUnits(val) {
     return pt.y;
 }
 '''
-    script_elm = etree.Element('script')
-    script_elm.set("type", "text/javascript")
-    script_elm.text = scr_text
-    svg_root.append(script_elm)
+    # ----
+    # following codes are unavailabe.
+    # for large svg, when appending element, parts of script are dropped. is there bug of lxml?
+    # ----
+    # script_elm = etree.Element('script')
+    # script_elm.set("type", "text/javascript")
+    # script_elm.text = scr_text
+    # svg_root.append(script_elm)
+
+    svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
+    svg_string = svg_string.decode('utf8')
+    svg_string = re.sub("</svg>", f'<script type="text/javascript">{scr_text}</script></svg>', svg_string)
+    return svg_string
 
 
 def trim_svg_string(svg_string):
@@ -168,10 +177,10 @@ if __name__ == "__main__":
             elm.text = ""
 
     add_style(svg_root, pu_groups)
-    add_script(svg_root)
+    svg_string = add_script(svg_root)
 
-    svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
-    svg_string = svg_string.decode('utf8')
+    # svg_string = etree.tostring(svg_root, encoding="utf8", method="xml")
+    # svg_string = svg_string.decode('utf8')
     svg_string = trim_svg_string(svg_string)
 
     print(svg_string)
