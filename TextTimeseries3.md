@@ -23,7 +23,7 @@ ID等を探すことは、ストレスになる。
 [ここ](https://htmlpreview.github.io/?https://github.com/maundergit/csv_tools/blob/master/examples/wagahaiwa_nekodearu.svg)
 にある。
 
-そこで、以下のツールで生成するHTML/SVG間で連携して利用する機能を付加する。
+そこで、以下のツールにより生成するHTML/SVG間において連携して利用する機能を付加する。
 
 ## 改良点
 
@@ -36,7 +36,7 @@ ID等を探すことは、ストレスになる。
 
 付随する機能として以下のものも実装した。
 
-- HTMLファイルの後ろに"?"に続いて語句を指定することで、ブラウザの検索機能により、対象語句の位置まで移動する
+- HTMLファイルの後ろに"?"に続いて語句を指定し、ブラウザの検索機能を用いることで対象語句の位置まで移動する
 - リンク利用可能な要素を示すために、マウスカーソルが重なると強調(ボールド)／フォントサイズを大きくするようにした
 - `csv_print_html.py`と`csv_print_html_oia.py`の生成するHTMLで、注目語句指定と同時に、注目語句を含まないレコードの非表示機能を追加
 - 複数の出力を一括するためのインデクスファイルの生成
@@ -100,7 +100,7 @@ example
 {nrec: 0, IDX: "1", B: "A", C: "Sample1"}
 ```
 この`oia_handler.js`は、`csv_print_timeline.sh`実行時にテンプレートが生成されるので、それを編集して使えば良い。
-なお、`csv_print_timeline.sh`実行時に既に`oia_handler.js`が存在する場合でも、上書きを行うことに注意。
+なお、`csv_print_timeline.sh`実行時に既に`oia_handler.js`が存在する場合でも、上書きすることに注意。
 
 
 <!-- ------------------ -->
