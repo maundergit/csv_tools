@@ -147,23 +147,23 @@ def init():
                                          formatter_class=argparse.RawDescriptionHelpFormatter,
                                          epilog=textwrap.dedent('''
 remark:
-  if model name starts with "@", the name was treadted as class of lmfit.model. see '--list_internal'.
+  if model name starts with "@", the name was treated as class of lmfit.model. see '--list_internal'.
   if model name starts with "%", the name was treated as function that was defined internaly. see '--list_internal'.
 
 example:
   csv_lmfit.py --print_sample_model
   csv_lmfit.py --list_internal
   MDL='local_model1|{"a": {"value": 0, "min": -1, "max": 5, "vary": true}, "b": {"value": 1, "min": -3, "max": 3, "vary": true}, "c": {"value": 1, "min": -1, "max": 1, "vary": true}}'
-  python3 lmfit_test.py --model_definition="${MDL}" lmfit_sample.csv
+  csv_lmfit.py --model_definition="${MDL}" lmfit_sample.csv
   csv_lmfit.py --model_definition="${MDL}" --model_definition="@LorentzianModel" --output=test_result.csv lmfit_sample.csv X Y
   # read parameters from json file  
   csv_lmfit.py --model_definition="%BetaDistributionModel|@lmfit_test_data_beta.json" --output=test_result.csv lmfit_test_data_beta.csv X Y
 
-#-- template for local_model1.py
-csv_lmfit.py --print_sample_model lmfit_sample.csv X Y > local_model1.py
-# and edit this soure.
+  #-- template for local_model1.py
+  csv_lmfit.py --print_sample_model lmfit_sample.csv X Y > local_model1.py
+  # and edit this soure.
 
-#-- lmfit_sample.py for lmfit_sample.csv
+#-- lmfit_sample.py to make lmfit_sample.csv
 # -- DEBUG
 import numpy as np
 # import matplotlib.pyplot as plt
