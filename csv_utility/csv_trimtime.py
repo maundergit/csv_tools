@@ -19,6 +19,7 @@ import sys
 
 from datetime import timedelta
 from datetime import datetime as dtt
+from dateutil.relativedelta import relativedelta
 
 import re
 import numpy as np
@@ -48,7 +49,9 @@ remark:
   For '--change_timefreq', available methods are floor, ceil,round. About format string, you may find answer in folowing:
   'datetime  Basic date and time types https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior'.
   About 'freqnecy', you may check the document in following:
-  'Time series / date functionality https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases'.
+  "The frequency level to floor the index to. Must be a fixed frequency like ‘S’ (second) not ‘ME’ (month end). See frequency aliases for a list of possible freq values."
+    pandas.Series.dt.floor  pandas 1.2.4 documentation https://pandas.pydata.org/docs/reference/api/pandas.Series.dt.floor.html
+  'Time series / date functionality https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases'
 
   If you make group according to gap in seriesed values or datetime, '--gap' or '--time_gap' are available.
   This group is useful for plotting by 'csv_plot_*', printing status by 'csv_status'.
@@ -274,11 +277,35 @@ def change_time_frequency(df, ch_definitions):
                 t_format = "%Y-%m-%d %H:%M:%S"
             df[cname] = pd.to_datetime(df[t_col], format=t_format)
             if t_method == "floor":
-                df[cname] = df[cname].dt.floor(t_freq).dt.strftime(t_format)
+                if t_freq == "W":
+                    df[cname] = df[cname].apply(
+                        lambda x: x - timedelta(days=x.weekday(), hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(
+                            t_format)  # monday
+                elif t_freq == "M":
+                    df[cname] = df[cname].apply(lambda x: x - timedelta(days=x.day - 1) - timedelta(
+                        hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(t_format)
+                else:
+                    df[cname] = df[cname].dt.floor(t_freq).dt.strftime(t_format)
             elif t_method == "ceil":
-                df[cname] = df[cname].dt.ceil(t_freq).dt.strftime(t_format)
+                if t_freq == "W":
+                    df[cname] = df[cname].apply(
+                        lambda x: x - timedelta(days=x.weekday() - 7, hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(
+                            t_format)  # monday
+                elif t_freq == "M":
+                    df[cname] = df[cname].apply(lambda x: x + relativedelta(days=-x.day + 1, months=1) - timedelta(
+                        hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(t_format)
+                else:
+                    df[cname] = df[cname].dt.ceil(t_freq).dt.strftime(t_format)
             elif t_method == "round":
-                df[cname] = df[cname].dt.round(t_freq).dt.strftime(t_format)
+                if t_freq == "W":
+                    df[cname] = df[cname].apply(lambda x: x - timedelta(
+                        days=x.weekday() - (7 if x.weekday() > 4 else 0), hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(
+                            t_format)  # monday
+                elif t_freq == "M":
+                    df[cname] = df[cname].apply(lambda x: x + relativedelta(days=-x.day + 1, months=1 if x.day > 15 else 0) - timedelta(
+                        hours=x.hour, minutes=x.minute, seconds=x.second)).dt.strftime(t_format)
+                else:
+                    df[cname] = df[cname].dt.round(t_freq).dt.strftime(t_format)
             else:
                 print("#warn:csv_trimtime:invalid method for '--change_timefreq':{} in {}".format(t_method, cdf), file=sys.stderr)
                 continue
