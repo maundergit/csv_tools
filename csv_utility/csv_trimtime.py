@@ -119,6 +119,16 @@ date,value,G
 2007-09-01,22.93035694,2678400.0
 2007-10-01,23.26333992,5270400.0
 
+  csv_trimtime.py --decompose_datetime="A:%Y-%m-%d %H\:%M\:%S:year,day_of_week" test_trimtime.csv
+A,B,C,A_year,A_day_of_week
+2020-11-14 10:00:00,1,19,2020,5
+2020-11-13 10:00:00,1,19,2020,4
+2020-11-13 10:01:00,2,18,2020,4
+2020-11-13 10:02:00,3,7,2020,4
+2020-11-13 10:13:00,4,6,2020,4
+2020-11-13 10:14:00,5,3,2020,4
+2020-11-13 10:25:00,6,2,2020,4
+
 
 '''))
 
@@ -204,6 +214,15 @@ date,value,G
         type=str,
         metavar='COLUMN=definition[,COLUMN=definition...]',
         default=None)
+
+    arg_parser.add_argument("--decompose_datetime",
+                            dest="DECOMP",
+                            help="decompose datetime to year/month/day/hour/minute/second/week/day_of_week/day_of_year/quarter." +
+                            " if 'all' was used, there are all parts in result.",
+                            type=str,
+                            metavar="COLUMN:datetime_format:part_name[,part_name..])",
+                            default=None)
+
     arg_parser.add_argument(
         "--resample",
         dest="RESAMPLE",
@@ -317,6 +336,61 @@ def change_time_frequency(df, ch_definitions):
         print("??error:csv_trimtime:change time frequency:{}:{}".format(t_col, e), file=sys.stderr)
         sys.exit(1)
 
+    return df
+
+
+def decomp_datetime(df, decomp_parts):
+    d_parts = ["year", "month", "day", "hour", "minute", "second", "week", "day_of_week", "day_of_year", "quarter"]
+    print("%inf:csv_trimtime:decomp_datetime:{}".format(decomp_parts), file=sys.stderr)
+    try:
+        cvs = re.split(r"\s*(?<!\\):\s*", decomp_parts)
+        if len(cvs) < 2:
+            print("??error:csv_trimtime:decomp_datetime:invalid format of definition:{}".format(decomp_parts), file=sys.stderr)
+            sys.exit(1)
+        t_col = cvs[0]
+        t_format = cvs[1]
+        t_parts = re.split(r"\s*(?<!\\),\s*", cvs[2])
+        if len(t_format) > 0:
+            t_format = re.sub(r"\\:", ":", t_format)
+            t_format = re.sub(r"\\=", "=", t_format)
+        else:
+            t_format = "%Y-%m-%d %H:%M:%S"
+        cname_dt = t_col + "_datetime{}".format(dtt.now().timestamp())
+        df[cname_dt] = pd.to_datetime(df[t_col], format=t_format)
+        if "all" in t_parts:
+            t_parts = d_parts
+        r_parts = list(set(t_parts) - set(d_parts))
+        if len(r_parts) > 0:
+            print(f"#warn:csv_trimtime:decomp_datetime:invalid parts name:{r_parts}", file=sys.stderr)
+        t_parts = [v for v in d_parts if v in list(set(t_parts) & set(d_parts))]
+        for d_p in t_parts:
+            cname = t_col + f"_{d_p}"
+            if d_p == "year":
+                df[cname] = df[cname_dt].dt.year
+            elif d_p == "month":
+                df[cname] = df[cname_dt].dt.month
+            elif d_p == "day":
+                df[cname] = df[cname_dt].dt.day
+            elif d_p == "hour":
+                df[cname] = df[cname_dt].dt.hour
+            elif d_p == "minute":
+                df[cname] = df[cname_dt].dt.minute
+            elif d_p == "second":
+                df[cname] = df[cname_dt].dt.second
+            elif d_p == "week":
+                df[cname] = df[cname_dt].dt.isocalendar().week
+            elif d_p == "day_of_week":
+                df[cname] = df[cname_dt].dt.day_of_week
+            elif d_p == "day_of_year":
+                df[cname] = df[cname_dt].dt.day_of_year
+            elif d_p == "quarter":
+                df[cname] = df[cname_dt].dt.quarter
+
+        df.drop(columns=cname_dt, inplace=True)
+
+    except ValueError as e:
+        print("??error:csv_trimtime:decomp_datetime:{}:{}".format(t_col, e), file=sys.stderr)
+        sys.exit(1)
     return df
 
 
@@ -769,6 +843,9 @@ if __name__ == "__main__":
     if ch_timefreqs_s is not None:
         ch_timefreqs = re.split(r"\s*(?<!\\),\s*", ch_timefreqs_s)
 
+    # decompose datetime
+    decomp_parts = args.DECOMP
+
     # resampling
     resample_defs = args.RESAMPLE
     resample_func = args.RESAMPLE_FUNC
@@ -818,6 +895,9 @@ if __name__ == "__main__":
     if len(ch_timefreqs) > 0:
         print("%Inf:csv_trimtime:changing time frequency:[{}]".format(ch_timefreqs), file=sys.stderr)
         csv_df = change_time_frequency(csv_df, ch_timefreqs)
+
+    if decomp_parts is not None:
+        csv_df = decomp_datetime(csv_df, decomp_parts)
 
     csv_index = False
     if resample_defs is not None:
