@@ -302,7 +302,7 @@ def html_prologe_oia(align_center=True, width=None, word_colors="", search_on_ht
                 count_0= (nodes[i].innerHTML.match(re) ||[]).length;
                 if( count_0 > 0){{
                     nodes[i].setAttribute("hits_status","1");
-                }} else {{
+                }} else if(nodes[i].getAttribute("hits_status") == 0){{
                     nodes[i].setAttribute("hits_status","0");
                 }}
                 count= count+ count_0;
