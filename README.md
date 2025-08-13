@@ -141,7 +141,7 @@ csv_trimtime.py --change_timefreq='D=ABC002:%Y-%m-%d %H\:%M\:%S:floor:20s' bit-p
 
 ## 作者
 
-* **m.na.akei** - [maundergit](https://github.com/maundergit)
+* **ma.undersea** - [maundergit](https://github.com/maundergit)
 
 
 ## ライセンス
